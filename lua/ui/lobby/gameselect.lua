@@ -3,7 +3,7 @@
 --* Author: Chris Blackwell
 --* Summary: Game selection UI
 --*
---* Copyright © 2005 Gas Powered Games, Inc.  All rights reserved.
+--* Copyright ï¿½ 2005 Gas Powered Games, Inc.  All rights reserved.
 --*****************************************************************************
 
 local UIUtil = import('/lua/ui/uiutil.lua')
@@ -28,6 +28,7 @@ local errorDialog = false
 local editInFocus = nil
 
 local MapUtil = import('/lua/ui/maputil.lua')
+local OptionUtil = import('/lua/ui/optionutil.lua')
 local scenarios = MapUtil.EnumerateSkirmishScenarios()
 local gameOptions = {}
 gameOptions[1] = import('/lua/ui/lobby/lobbyOptions.lua').teamOptions
@@ -328,6 +329,9 @@ function CreateUI(over, exitBehavior)
                                       "<LOC _OK>")
             end
         end
+
+        LOG("bump!")
+
     end
     
     gameList._tabs = {}

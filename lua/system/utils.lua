@@ -151,6 +151,15 @@ function table.assimilate(t1, t2)
     return t1
 end
 
+--- table.contains(t,val) returns true when one element matches the predicate.
+function table.predicate(t, pred, ...)
+    for k, v in t do 
+        if pred(v, unpack(arg)) then 
+            return true
+        end
+    end
+end
+
 --- Remove all keys in t2 from t1.
 function table.subtract(t1, t2)
     if not t2 then return t1 end -- prevent looping over nil table

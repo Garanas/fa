@@ -10,6 +10,7 @@ local UIUtil = import('/lua/ui/uiutil.lua')
 local MenuCommon = import('/lua/ui/menus/menucommon.lua')
 local Prefs = import('/lua/user/prefs.lua')
 local MapUtil = import('/lua/ui/maputil.lua')
+local OptionUtil = import('/lua/ui/optionutil.lua')
 local Group = import('/lua/maui/group.lua').Group
 local RadioButton = import('/lua/ui/controls/radiobutton.lua').RadioButton
 local MapPreview = import('/lua/ui/controls/mappreview.lua').MapPreview
@@ -82,37 +83,14 @@ local AIOpts = import('/lua/ui/lobby/lobbyOptions.lua').AIOpts
 local gameColors = import('/lua/gameColors.lua').GameColors
 local numOpenSlots = LobbyComm.maxPlayerSlots
 
--- Add lobby options from AI mods
-function ImportModAIOptions()
-    local simMods = import('/lua/mods.lua').AllMods()
-    local OptionData
-    local alreadyStored
-    for Index, ModData in simMods do
-        if exists(ModData.location..'/lua/AI/LobbyOptions/lobbyoptions.lua') then
-            OptionData = import(ModData.location..'/lua/AI/LobbyOptions/lobbyoptions.lua').AIOpts
-            for s, t in OptionData do
-                -- check, if we have this option already stored
-                alreadyStored = false
-                for k, v in AIOpts do
-                    if v.key == t.key then
-                        alreadyStored = true
-                        break
-                    end
-                end
-                if not alreadyStored then
-                    table.insert(AIOpts, t)
-                end
-            end
-        end
-    end
-end
-ImportModAIOptions()
-
 -- Maps faction identifiers to their names.
 local FACTION_NAMES = {[1] = "uef", [2] = "aeon", [3] = "cybran", [4] = "seraphim", [5] = "random" }
 
 local LAST_GAME_PRESET_NAME = "lastGame"
 local rehostPlayerOptions = {} -- Player options loaded from preset, used for rehosting
+
+local allOptions = { }
+local nonDefaultOptions = { }
 
 local formattedOptions = {}
 local nonDefaultFormattedOptions = {}
@@ -3239,9 +3217,9 @@ function CreateUI(maxPlayers)
 
     local function DataSize()
         if HideDefaultOptions then
-            return table.getn(nonDefaultFormattedOptions)
+            return table.getn(nonDefaultOptions)
         else
-            return table.getn(formattedOptions)
+            return table.getn(allOptions)
         end
     end
 
@@ -3280,7 +3258,64 @@ function CreateUI(maxPlayers)
     end
     -- determines what controls should be visible or not
     GUI.OptionContainer.CalcVisible = function(self)
-        local function SetTextLine(line, data, lineID)
+
+        local function OptionToToolTip (option, value)
+
+        end
+
+        local function TitleToUI (line, element)
+            line.text:SetColor(UIUtil.fontColor)
+            LayoutHelpers.AtLeftTopIn(line.text, line, 5)
+            LayoutHelpers.AtRightTopIn(line.value, line, 5, 16)
+            LayoutHelpers.ResetLeft(line.value)
+
+            line.text:SetText(LOCF(data.text, data.key))
+            line.bg:Show()
+            line.value:SetText(LOCF(data.value, data.key))
+            line.bg2:Show()
+            line.bg.HandleEvent = Group.HandleEvent
+            line.bg2.HandleEvent = Bitmap.HandleEvent
+            if data.tooltip then
+                Tooltip.AddControlTooltip(line.bg, data.tooltip)
+                Tooltip.AddControlTooltip(line.bg2, data.valueTooltip)
+            end
+
+            -- titles have no interactivity / tooltips
+            line.bg.HandleEvent = Group.HandleEvent
+            line.bg2.HandleEvent = Bitmap.HandleEvent
+
+            -- position the title
+            line.text:SetColor(UIUtil.fontColor)
+            LayoutHelpers.AtCenterIn(line.text, line, 5)
+
+            -- set its text
+            line.text:SetText(LOCF(element.text))
+
+            line.bg:Show()
+        end
+
+        local function OptionToUI(line, element)
+            -- not all options have interactivity / tooltips
+            line.bg.HandleEvent = Group.HandleEvent
+            line.bg2.HandleEvent = Bitmap.HandleEvent
+        end
+
+        local function TextToUI(line, element)
+            -- text has no interactivity / tooltips
+            line.bg.HandleEvent = Group.HandleEvent
+            line.bg2.HandleEvent = Bitmap.HandleEvent
+
+        end
+
+        -- essentially hides this element of the list
+        local function SpacerToUI(line, element)
+            line.text:SetText('')
+            line.value:SetText('')
+            line.bg:Hide()
+            line.bg2:Hide()
+        end
+
+        local function SetTextLine(line, data)
             if data.mod then
                 -- The special label at the top stating the number of mods.
                 line.text:SetColor('ffff7777')
@@ -3294,6 +3329,7 @@ function CreateUI(maxPlayers)
                 LayoutHelpers.AtRightTopIn(line.value, line, 5, 16)
                 LayoutHelpers.ResetLeft(line.value)
             end
+            LOG(repr(data.text))
             line.text:SetText(LOCF(data.text, data.key))
             line.bg:Show()
             line.value:SetText(LOCF(data.value, data.key))
@@ -3306,21 +3342,28 @@ function CreateUI(maxPlayers)
             end
         end
 
-        local optionsToUse
+        -- determine what options to use
+        local options = allOptions
         if HideDefaultOptions then
-            optionsToUse = nonDefaultFormattedOptions
-        else
-            optionsToUse = formattedOptions
+            options = nonDefaultOptions
         end
 
         for i, v in GUI.OptionDisplay do
-            if optionsToUse[i + self.top] then
-                SetTextLine(v, optionsToUse[i + self.top], i + self.top)
-            else
-                v.text:SetText('')
-                v.value:SetText('')
-                v.bg:Hide()
-                v.bg2:Hide()
+            -- remove the previous entry
+            SpacerToUI(v) 
+
+            -- 
+            local element = options[i + self.top]
+            if element then 
+                if element.type == 'title' then 
+                    TitleToUI(v, element)
+                elseif element.type == 'option' then 
+                    OptionToUI(v, element)
+                elseif element.type == 'text' then 
+                    TextToUI(v, element)
+                else 
+                    WARN("Lobby: unknown element type " .. element.type .. ".")
+                end
             end
         end
     end
@@ -3755,143 +3798,152 @@ function setupChatEdit(chatPanel)
 end
 
 function RefreshOptionDisplayData(scenarioInfo)
-    local globalOpts = import('/lua/ui/lobby/lobbyOptions.lua').globalOpts
-    local teamOptions = import('/lua/ui/lobby/lobbyOptions.lua').teamOptions
-    local AIOpts = import('/lua/ui/lobby/lobbyOptions.lua').AIOpts
+
+    -- load in a scenario if we're missing it somehow
     if not scenarioInfo and gameInfo.GameOptions.ScenarioFile and (gameInfo.GameOptions.ScenarioFile ~= "") then
         scenarioInfo = MapUtil.LoadScenario(gameInfo.GameOptions.ScenarioFile)
     end
-    formattedOptions = {}
-    nonDefaultFormattedOptions = {}
 
-    -- Show a summary of the number of active mods.
-    local modStr = false
-    local modNum = table.getn(Mods.GetGameMods(gameInfo.GameMods)) or 0
-    local modNumUI = table.getn(Mods.GetUiMods()) or 0
-    if modNum > 0 and modNumUI > 0 then
-        modStr = modNum..' Mods (and '..modNumUI..' UI Mods)'
-        if modNum == 1 and modNumUI > 1 then
-            modStr = modNum..' Mod (and '..modNumUI..' UI Mods)'
-        elseif modNum > 1 and modNumUI == 1 then
-            modStr = modNum..' Mods (and '..modNumUI..' UI Mod)'
-        elseif modNum == 1 and modNumUI == 1 then
-            modStr = modNum..' Mod (and '..modNumUI..' UI Mod)'
-        else
-            modStr = modNum..' Mods (and '..modNumUI..' UI Mods)'
-        end
-    elseif modNum > 0 and modNumUI == 0 then
-        modStr = modNum..' Mods'
-        if modNum == 1 then
-            modStr = modNum..' Mod'
-        end
-    elseif modNum == 0 and modNumUI > 0 then
-        modStr = modNumUI..' UI Mods'
-        if modNum == 1 then
-            modStr = modNumUI..' UI Mod'
-        end
-    end
-    if modStr then
-        local option = {
-            text = modStr,
-            value = LOC('<LOC lobby_0003>Check Mod Manager'),
-            mod = true,
-            tooltip = 'Lobby_Mod_Option',
-            valueTooltip = 'Lobby_Mod_Option'
-        }
+    allOptions = { }
+    nonDefaultOptions = { }
 
-        table.insert(formattedOptions, option)
-        table.insert(nonDefaultFormattedOptions, option)
-    end
+    -- generate the ui / sim mods count
+    local countSimMods = table.getn(Mods.GetGameMods(gameInfo.GameMods)) or 0
+    local coundUIMods = table.getn(Mods.GetUiMods()) or 0
 
-    -- Update the unit restrictions display.
-    if gameInfo.GameOptions.RestrictedCategories ~= nil then
-        local restrNum = table.getn(gameInfo.GameOptions.RestrictedCategories)
-        if restrNum ~= 0 then
-            local restrictLabel
-            if restrNum == 1 then -- just 1
-                restrictLabel = LOC("<LOC lobui_0415>1 Build Restriction")
-            else
-                restrictLabel = LOCF("<LOC lobui_0414>%d Build Restrictions", restrNum)
-            end
+    -- if countSimMods > 0 or countUIMods > 0 then 
 
-            local option = {
-                text = restrictLabel,
-                value = LOC("<LOC lobui_0416>Check Unit Manager"),
-                mod = true,
-                tooltip = 'Lobby_BuildRestrict_Option',
-                valueTooltip = 'Lobby_BuildRestrict_Option'
-            }
+    --     if countSimMods > 0 then 
 
-            table.insert(formattedOptions, option)
-            table.insert(nonDefaultFormattedOptions, option)
-        end
-    end
+    --     end
 
-    -- Add an option to the formattedOption lists
-    local function addFormattedOption(optData, gameOption)
-        -- Don't show multiplayer-only options in single-player
-        if optData.mponly and singlePlayer then
-            return
-        end
+    --     if countUiMods > 0 then 
 
-        -- Don't bother for options with only one value. These are usually someone trying to do
-        -- something clever with a mod or such, not "real" options we care about.
-        if table.getn(optData.values) <= 1 then
-            return
-        end
+    --     end
 
-        local option = {
-            text = optData.label,
-            tooltip = { text = optData.label, body = optData.help }
-        }
+    --     local checkModManager = OptionUtil.MakeText(LOC('<LOC lobby_0003>Check Mod Manager'), 1)
+    --     table.insert(allOptions, checkModManager)
+    --     table.insert(nonDefaultOptions, checkModManager)
+    -- end
 
-        -- Options are stored as keys from the values array in optData. We want to display the
-        -- descriptive string in the UI, so let's go dig it out.
+    -- if gameInfo.GameOptions.RestrictedCategories ~= nil then
+    --     local restrNum = table.getn(gameInfo.GameOptions.RestrictedCategories)
+    --     if restrNum ~= 0 then
+    --         local restrictLabel
+    --         if restrNum == 1 then -- just 1
+    --             restrictLabel = LOC("<LOC lobui_0415>1 Build Restriction")
+    --         else
+    --             restrictLabel = LOCF("<LOC lobui_0414>%d Build Restrictions", restrNum)
+    --         end
 
-        -- Scan the values array to find the one with the key matching our value for that option.
-        for k, val in optData.values do
-            local key = val.key or val
+    --         local option = {
+    --             text = restrictLabel,
+    --             value = LOC("<LOC lobui_0416>Check Unit Manager"),
+    --             mod = true,
+    --             tooltip = 'Lobby_BuildRestrict_Option',
+    --             valueTooltip = 'Lobby_BuildRestrict_Option'
+    --         }
 
-            if key == gameOption then
-                option.key = key
-                option.value = val.text or optData.value_text
-                option.valueTooltip = {text = optData.label, body = val.help or optData.value_help}
+    --         table.insert(formattedOptions, option)
+    --         table.insert(nonDefaultFormattedOptions, option)
+    --     end
+    -- end
 
-                table.insert(formattedOptions, option)
 
-                -- Add this option to the non-default set for the UI.
-                if k ~= optData.default then
-                    table.insert(nonDefaultFormattedOptions, option)
-                end
+    -- generate the restrictions count
 
-                break
-            end
-        end
-    end
 
-    local function addOptionsFrom(optionObject)
-        for index, optData in optionObject do
-            local gameOption = gameInfo.GameOptions[optData.key]
-            addFormattedOption(optData, gameOption)
-        end
-    end
+    -- generate the generic options
+    local mods = Mods.GetGameMods()
+    local sections = OptionUtil.AllSections(scenarioInfo, mods, true)
+    sections = OptionUtil.CheckSections(sections)
+    sections = OptionUtil.MarkDefaultSections(sections, gameInfo.GameOptions)
 
-    -- Add the core options to the formatted option lists
-    addOptionsFrom(globalOpts)
-    addOptionsFrom(teamOptions)
-    addOptionsFrom(AIOpts)
+    -- with defaults
+    local sectionsWithDefaults = OptionUtil.CopySections(sections)
+    sectionsWithDefaults = OptionUtil.MarkEmptySections(sectionsWithDefaults)
 
-    -- Add options from the scenario object, if any are provided.
-    if scenarioInfo.options then
-        if not MapUtil.ValidateScenarioOptions(scenarioInfo.options, true) then
-            AddChatText(LOC('<LOC lobui_0397>The options included in this map specified invalid defaults. See moholog for details.'))
-            AddChatText(LOC('<LOC lobui_0398>An arbitrary option has been selected for now: check the game options screen!'))
-        end
+    -- without defaults
+    local sectionsWithoutDefaults = OptionUtil.CopySections(sections)
+    sectionsWithoutDefaults = OptionUtil.TrimDefaultOptions(sectionsWithoutDefaults)
+    sectionsWithoutDefaults = OptionUtil.TrimEmptySections(sectionsWithoutDefaults)
 
-        for index, optData in scenarioInfo.options do
-            addFormattedOption(optData, gameInfo.GameOptions[optData.key])
-        end
-    end
+    LOG(repr("WITHOUT DEFAULTS"))
+    LOG(repr(sectionsWithoutDefaults))
+
+    -- LOG(repr(sectionsWithDefaults))
+
+    -- -- all the options
+    -- local allOptionsLocal = OptionUtil.FormatSections(sections)
+
+    -- -- just the non-default options
+    -- OptionUtil.TrimSections(sections, gameInfo.GameOptions)
+    -- local nonDefaultOptionsLocal = OptionUtil.FormatSections(sections, true)
+
+    -- -- Show a summary of the number of active mods.
+    -- local modStr = false
+    -- local modNum = table.getn(Mods.GetGameMods(gameInfo.GameMods)) or 0
+    -- local modNumUI = table.getn(Mods.GetUiMods()) or 0
+    -- if modNum > 0 and modNumUI > 0 then
+    --     modStr = modNum..' Mods (and '..modNumUI..' UI Mods)'
+    --     if modNum == 1 and modNumUI > 1 then
+    --         modStr = modNum..' Mod (and '..modNumUI..' UI Mods)'
+    --     elseif modNum > 1 and modNumUI == 1 then
+    --         modStr = modNum..' Mods (and '..modNumUI..' UI Mod)'
+    --     elseif modNum == 1 and modNumUI == 1 then
+    --         modStr = modNum..' Mod (and '..modNumUI..' UI Mod)'
+    --     else
+    --         modStr = modNum..' Mods (and '..modNumUI..' UI Mods)'
+    --     end
+    -- elseif modNum > 0 and modNumUI == 0 then
+    --     modStr = modNum..' Mods'
+    --     if modNum == 1 then
+    --         modStr = modNum..' Mod'
+    --     end
+    -- elseif modNum == 0 and modNumUI > 0 then
+    --     modStr = modNumUI..' UI Mods'
+    --     if modNum == 1 then
+    --         modStr = modNumUI..' UI Mod'
+    --     end
+    -- end
+    -- if modStr then
+    --     local option = {
+    --         text = modStr,
+    --         value = LOC('<LOC lobby_0003>Check Mod Manager'),
+    --         mod = true,
+    --         tooltip = 'Lobby_Mod_Option',
+    --         valueTooltip = 'Lobby_Mod_Option'
+    --     }
+
+    --     table.insert(formattedOptions, option)
+    --     table.insert(nonDefaultFormattedOptions, option)
+    -- end
+
+    -- -- Update the unit restrictions display.
+    -- if gameInfo.GameOptions.RestrictedCategories ~= nil then
+    --     local restrNum = table.getn(gameInfo.GameOptions.RestrictedCategories)
+    --     if restrNum ~= 0 then
+    --         local restrictLabel
+    --         if restrNum == 1 then -- just 1
+    --             restrictLabel = LOC("<LOC lobui_0415>1 Build Restriction")
+    --         else
+    --             restrictLabel = LOCF("<LOC lobui_0414>%d Build Restrictions", restrNum)
+    --         end
+
+    --         local option = {
+    --             text = restrictLabel,
+    --             value = LOC("<LOC lobui_0416>Check Unit Manager"),
+    --             mod = true,
+    --             tooltip = 'Lobby_BuildRestrict_Option',
+    --             valueTooltip = 'Lobby_BuildRestrict_Option'
+    --         }
+
+    --         table.insert(formattedOptions, option)
+    --         table.insert(nonDefaultFormattedOptions, option)
+    --     end
+    -- end
+
+
 
     GUI.OptionContainer:CalcVisible()
 end
