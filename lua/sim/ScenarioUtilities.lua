@@ -50,8 +50,41 @@ function EnableLoadBalance(enabled, unitThreshold) --distributeTime)
     end
 end
 
-function GetMarkers()
-    return Scenario.MasterChain._MASTERCHAIN_.Markers
+-- keep track of a cache
+local markerTypeCache = { }
+
+function GetMarkers(type)
+
+    -- check if parameter is set, if not - help us all and return everything
+    if not type then 
+        return Scenario.MasterChain._MASTERCHAIN_.Markers
+    end
+
+    -- check if we already looked for these in the past
+    if not markerTypeCache[type] then
+
+        -- make it easier to read
+        local markers = Scenario.MasterChain._MASTERCHAIN_.Markers
+
+
+        -- prepare a table to keep the markers
+        local cache = { }
+
+        -- go over every marker and popualte our table
+        if markers then
+            for k, v in markers do
+                if v.type == type then
+                    table.insert(cache, {Position = v.position, Name = k})
+                end
+            end
+        end
+
+        -- add the table to the cache
+        markerTypeCache[type] = cache
+    end
+
+    -- return the cached markers
+    return markerTypeCache[type]
 end
 
 function GetMarker(name)
