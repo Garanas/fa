@@ -2638,18 +2638,16 @@ function AIGetPingMarkersAroundLocation(aiBrain, threatMin, threatMax, threatRin
 end
 
 function AIGetMarkerLocationsSorian(aiBrain, markerType)
+    -- check if we are interested in a particular type
     local markerList = {}
+    if markerType then 
+        markerList = ScenarioUtils.GetMarkers(markerType)
+    end
+
+    -- add in tactical bases
     if aiBrain.TacticalBases then
         for k, v in aiBrain.TacticalBases do
             table.insert(markerList, {Position = v.Position, Name = k})
-        end
-    end
-    local markers = ScenarioUtils.GetMarkers()
-    if markers then
-        for k, v in markers do
-            if v.type == markerType then
-                table.insert(markerList, {Position = v.position, Name = k})
-            end
         end
     end
 
