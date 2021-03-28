@@ -53,15 +53,15 @@ end
 -- keep track of a cache
 local markerTypeCache = { }
 
-function GetMarkers(type)
+function GetMarkers(markerType)
 
     -- check if parameter is set, if not - help us all and return everything
-    if not type then 
+    if not markerType then 
         return Scenario.MasterChain._MASTERCHAIN_.Markers
     end
 
     -- check if we already looked for these in the past
-    if not markerTypeCache[type] then
+    if not markerTypeCache[markerType] then
 
         -- make it easier to read
         local markers = Scenario.MasterChain._MASTERCHAIN_.Markers
@@ -73,7 +73,7 @@ function GetMarkers(type)
         -- go over every marker and popualte our table
         if markers then
             for k, v in markers do
-                if v.type == type then
+                if v.type == markerType then
                     table.insert(cache, {Position = v.position, Name = k})
                 end
             end
