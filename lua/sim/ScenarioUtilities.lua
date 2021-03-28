@@ -60,7 +60,7 @@ end
 
 --- Flushes a single element from the cache
 -- @param markerType The type to flush.
-function FlushElementMarkerTypeCache(markerType)
+function FlushElementOfMarkerTypeCache(markerType)
     markerTypeCache[markerType] = nil
 end
 
@@ -87,7 +87,6 @@ function GetMarkers(markerType)
 
         -- make it easier to read
         local markers = Scenario.MasterChain._MASTERCHAIN_.Markers
-
 
         -- prepare a table to keep the markers
         local cache = { }
