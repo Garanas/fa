@@ -53,6 +53,25 @@ end
 -- cache for marker types
 local markerTypeCache = { }
 
+--- Flushes the entire cache
+function FlushEntireMarkerTypeCache()
+    markerTypeCache = { }
+end
+
+--- Flushes a single element from the cache
+-- @param markerType The type to flush.
+function FlushElementMarkerTypeCache(markerType)
+    markerTypeCache[markerType] = nil
+end
+
+--- Sets the cache for a specific marker type - it is up to you to make 
+-- sure the format is correct: {Position = v.position, Name = k}.
+-- @param markerType The type to set.
+-- @param markers The marker to set.
+function SetMarkerTypeCache(markerType, markers)
+    markerTypeCache[markerType] = markers
+end
+
 --- Retrieves all markers in the scenario. If a type if filters the markers  
 -- and caches the first query with that type to speed up future queries.
 -- @param markerType An optional parameter to indicate an interest for a particular type.
