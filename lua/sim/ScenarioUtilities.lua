@@ -100,7 +100,7 @@ function GetMarkers(markerType)
             end
         end
 
-        -- add the table to the cache
+        -- add the markers of this type to the cache
         markerTypeCache[type] = cache
     end
 
