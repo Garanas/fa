@@ -50,9 +50,12 @@ function EnableLoadBalance(enabled, unitThreshold) --distributeTime)
     end
 end
 
--- keep track of a cache
+-- cache for marker types
 local markerTypeCache = { }
 
+--- Retrieves all markers in the scenario. If a type if filters the markers  
+-- and caches the first query with that type to speed up future queries.
+-- @param markerType An optional parameter to indicate an interest for a particular type.
 function GetMarkers(markerType)
 
     -- check if parameter is set, if not - help us all and return everything
