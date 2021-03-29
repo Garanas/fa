@@ -123,7 +123,9 @@ LocationIsOk = function(data, RangeCheckUnits)
                 unit = GetUnitById(u)
                 if unit then
                     maxDist = unit:GetBlueprint().SpecialAbilities[TaskName].MaxRadius
+                    maxDistSq = maxDist * maxDist
                     minDist = 0  # TODO: minimum radius distance check currently not implemented
+                    minDistSq = minDist * minDist
                     if not maxDist or maxDist < 0 then   # unlimited range
                         InRange = true
                         RangeLimited = false
@@ -132,8 +134,8 @@ LocationIsOk = function(data, RangeCheckUnits)
                         continue
                     elseif maxDist > 0 then              # unit counts towards range check, do check
                         posU = unit:GetPosition()
-                        dist = VDist2(posU[1], posU[3], posM[1], posM[3])
-                        InRange = (dist >= minDist and dist <= maxDist)
+                        distSq = VDist2Sq(posU[1], posU[3], posM[1], posM[3])
+                        InRange = (dist >= minDistSq and dist <= maxDistSq)
                         if InRange then
                             break
                         end
