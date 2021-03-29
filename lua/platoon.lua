@@ -1930,6 +1930,7 @@ Platoon = Class(moho.platoon_methods) {
         eng.AssistPlatoon = self
         local assistee = false
         local assistRange = assistData.AssistRange or 80
+        local assistRangeSq = assistRange * assistRange
         local platoonPos = self:GetPlatoonPosition()
         local beingBuilt = assistData.BeingBuiltCategories or { 'ALLUNITS' }
         local assisteeCat = assistData.AssisteeCategory or categories.ALLUNITS
@@ -1947,22 +1948,27 @@ Platoon = Class(moho.platoon_methods) {
                 local low = false
                 local bestUnit = false
                 for k,v in assistList do
-                    --DUNCAN - check unit is inside assist range 
-                    local unitPos = v:GetPosition()
+                    -- check total number of assistees
                     local UnitAssist = v.UnitBeingBuilt or v.UnitBeingAssist or v
                     local NumAssist = table.getn(UnitAssist:GetGuards())
-                    local dist = VDist2(platoonPos[1], platoonPos[3], unitPos[1], unitPos[3])
-                    -- Find the closest unit to assist
-                    if assistData.AssistClosestUnit then
-                        if (not low or dist < low) and NumAssist < 20 and dist < assistRange then
-                            low = dist
-                            bestUnit = v
-                        end
-                    -- Find the unit with the least number of assisters; assist it
-                    else
-                        if (not low or NumAssist < low) and NumAssist < 20 and dist < assistRange then
-                            low = NumAssist
-                            bestUnit = v
+                    if NumAssist < 20 then
+
+                        -- find smallest distance or count
+                        local unitPos = v:GetPosition()
+                        local dist = VDist2Sq(platoonPos[1], platoonPos[3], unitPos[1], unitPos[3])
+
+                        -- Find the closest unit to assist
+                        if assistData.AssistClosestUnit then
+                            if (not low or dist < low) and dist < assistRangeSq then
+                                low = dist
+                                bestUnit = v
+                            end
+                        -- Find the unit with the least number of assisters
+                        else
+                            if (not low or NumAssist < low) and dist < assistRangeSq then
+                                low = NumAssist
+                                bestUnit = v
+                            end
                         end
                     end
                 end
