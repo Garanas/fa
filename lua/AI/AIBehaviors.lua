@@ -51,7 +51,9 @@ function CDRRunAway(aiBrain, cdr)
 
                 if not prevSpot or runSpot[1] ~= prevSpot[1] or runSpot[3] ~= prevSpot[3] then
                     plat:Stop()
-                    if VDist2(cdrPos[1], cdrPos[3], runSpot[1], runSpot[3]) >= 10 then
+
+                    -- squared distance: 10 -> 100
+                    if VDist2Sq(cdrPos[1], cdrPos[3], runSpot[1], runSpot[3]) >= 100 then
                         if canTeleport then
                             IssueTeleport({cdr}, runSpot)
                         else
@@ -409,7 +411,7 @@ function AirUnitRefitThread(unit, plan, data)
                             end
                             if roomAvailable then
                                 local platPos = v:GetPosition()
-                                local tempDist = VDist2(unitPos[1], unitPos[3], platPos[1], platPos[3])
+                                local tempDist = VDist2Sq(unitPos[1], unitPos[3], platPos[1], platPos[3])
                                 if not closest or tempDist < distance then
                                     closest = v
                                     distance = tempDist

@@ -430,8 +430,9 @@ function GiveOrders(Data)
                 if order.CommandType == "Move" then
                     local bomberPosition = unit:GetPosition()
                     
-                    --reject all move orders that are closer than 20
-                    if VDist2(bomberPosition[1], bomberPosition[3], order.Position[1], order.Position[3]) < 20 then
+                    -- squared distance: 20 -> 400
+                    -- reject all move orders that are closer than 20
+                    if VDist2Sq(bomberPosition[1], bomberPosition[3], order.Position[1], order.Position[3]) < 400 then
                         table.remove (Data.unit_orders, key)
                     end
                 end

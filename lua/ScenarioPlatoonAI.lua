@@ -2194,36 +2194,31 @@ function GetTransportsThread(platoon)
                 for _, unit in pool:GetPlatoonUnits() do
                     if EntityCategoryContains(categories.TRANSPORTATION, unit) and not unit:IsUnitState('Busy') then
                         local unitPos = unit:GetPosition()
-                        local curr = {Unit=unit, Distance=VDist2(unitPos[1], unitPos[3], location[1], location[3]),
+                        local curr = {Unit=unit, Distance=VDist2Sq(unitPos[1], unitPos[3], location[1], location[3]),
                                        Id = unit.UnitId}
                         table.insert(transports, curr)
                     end
                 end
-                if table.getn(transports) > 0 then
-                    local sortedList = {}
-                    -- Sort distances
-                    for k = 1, table.getn(transports) do
-                        local lowest = -1
-                        local key, value
-                        for j, u in transports do
-                            if lowest == -1 or u.Distance < lowest then
-                                lowest = u.Distance
-                                value = u
-                                key = j
-                            end
-                        end
-                        sortedList[k] = value
-                        -- Remove from unsorted table
-                        table.remove(transports, key)
+                if table.getn(transports) > 0 then 
+                
+                    -- sort them on distance, having the closest first
+                    table.sort(transports, function(a, b)
+                        return a.Distance < b.Distance
+                    end )
+
+                    -- 
+                    for k, data in transports do 
+                        LOG(data.Distance)
                     end
+
                     -- Take transports as needed
-                    for i = 1, table.getn(sortedList) do
+                    for i = 1, table.getn(transports) do
                         if transportsNeeded then
-                            local id = sortedList[i].Id
-                            aiBrain:AssignUnitsToPlatoon(platoon, {sortedList[i].Unit}, 'Scout', 'GrowthFormation')
+                            local id = transports[i].Id
+                            aiBrain:AssignUnitsToPlatoon(platoon, {transports[i].Unit}, 'Scout', 'GrowthFormation')
                             numTransports = numTransports + 1
                             if not transSlotTable[id] then
-                                transSlotTable[id] = GetNumTransportSlots(sortedList[i].Unit)
+                                transSlotTable[id] = GetNumTransportSlots(transports[i].Unit)
                             end
                             local tempSlots = {}
                             tempSlots.Small = transSlotTable[id].Small

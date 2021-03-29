@@ -1275,7 +1275,7 @@ end
 #       a table of locations representing the safest path to get to the specified destination
 #-----------------------------------------------------
 
-function PlatoonGenerateSafePathTo(aiBrain, platoonLayer, start, destination, optThreatWeight, optMaxMarkerDist, testPathDist)
+function PlatoonGenerateSafePathTo(aiBrain, platoonLayer, start, destination, optThreatWeight, optMaxMarkerDist, testPathDistSq)
     -- if we don't have markers for the platoonLayer, then we can't build a path.
     if not GetPathGraphs()[platoonLayer] then
         return false, 'NoGraph'
@@ -1287,7 +1287,7 @@ function PlatoonGenerateSafePathTo(aiBrain, platoonLayer, start, destination, op
 
     --If we are within 100 units of the destination, don't bother pathing. (Sorian and Duncan AI)
     if (aiBrain.Sorian or aiBrain.Duncan) and (VDist2(start[1], start[3], destination[1], destination[3]) <= 100
-    or (testPathDist and VDist2Sq(start[1], start[3], destination[1], destination[3]) <= testPathDist)) then
+    or (testPathDist and VDist2Sq(start[1], start[3], destination[1], destination[3]) <= testPathDistSq)) then
         table.insert(finalPath, destination)
         return finalPath
     end
@@ -1638,8 +1638,9 @@ function GeneratePath(aiBrain, startNode, endNode, threatType, threatWeight, end
     local fork = {}
     -- Is the Start and End node the same OR is the distance to the first node longer then to the destination ?
     if startNode.name == endNode.name
-    or VDist2(startPos[1], startPos[3], startNode.position[1], startNode.position[3]) > VDist2(startPos[1], startPos[3], endPos[1], endPos[3])
-    or VDist2(startPos[1], startPos[3], endPos[1], endPos[3]) < 50 then
+    or VDist2Sq(startPos[1], startPos[3], startNode.position[1], startNode.position[3]) > VDist2Sq(startPos[1], startPos[3], endPos[1], endPos[3])
+    -- squared distance: 50 -> 2500
+    or VDist2Sq(startPos[1], startPos[3], endPos[1], endPos[3]) < 2500 then
         -- store as path only our current destination.
         fork.path = { { position = endPos } }
         aiBrain.PathCache[startNode.name][endNode.name][threatWeight] = { settime = GetGameTimeSeconds(), path = fork }
@@ -1815,6 +1816,7 @@ function AIFindUnitRadiusThreat(aiBrain, alliance, priTable, position, radius, t
         checkThreat = true
     end
 
+    local radiusSq = radius * radius
     local distance = false
     local retUnit = false
     for tNum, catList in unitTable do
@@ -1830,8 +1832,8 @@ function AIFindUnitRadiusThreat(aiBrain, alliance, priTable, position, radius, t
                     end
                 end
                 if useUnit then
-                    local tempDist = VDist2(unitPos[1], unitPos[3], position[1], position[3])
-                    if tempDist < radius and (not distance or tempDist < distance) then
+                    local tempDist = VDist2Sq(unitPos[1], unitPos[3], position[1], position[3])
+                    if tempDist < radiusSq and (not distance or tempDist < distance) then
                         distance = tempDist
                         retUnit = unit
                     end
