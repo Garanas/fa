@@ -1405,7 +1405,7 @@ Platoon = Class(moho.platoon_methods) {
                             local group = {}
                             for k,v in platoonUnits do
                                 vPos = table.copy(v:GetPosition())
-                                if VDist2(vPos[1], vPos[3], locData.Location[1], locData.Location[3]) < locData.Radius then
+                                if VDist2Sq(vPos[1], vPos[3], locData.Location[1], locData.Location[3]) < locData.Radius * locData.Radius then
                                     table.insert(group, v)
                                 end
                             end
@@ -1668,7 +1668,7 @@ Platoon = Class(moho.platoon_methods) {
                 if not IsProp(v) or eng.BadReclaimables[v] then continue end
                 if not needEnergy or v.MaxEnergyReclaim then
                     local rpos = v:GetCachePosition()
-                    table.insert(reclaim, {entity=v, pos=rpos, distance=VDist2(pos[1], pos[3], rpos[1], rpos[3])})
+                    table.insert(reclaim, {entity=v, pos=rpos, distance=VDist2Sq(pos[1], pos[3], rpos[1], rpos[3])})
                 end
             end
 
@@ -1681,7 +1681,9 @@ Platoon = Class(moho.platoon_methods) {
                 -- This is slowing down the whole sim when engineers start's reclaiming, and every engi is pathing with CanPathTo (r.pos)
                 -- even if the engineer will run into walls, it is only reclaimig and don't justifies the huge CPU cost. (Simspeed droping from +9 to +3 !!!!)
                 -- eng.BadReclaimables[r.entity] = r.distance > 10 and not eng:CanPathTo (r.pos)
-                eng.BadReclaimables[r.entity] = r.distance > 20
+
+                -- distance is squared: 20 -> 400
+                eng.BadReclaimables[r.entity] = r.distance > 400
                 if not eng.BadReclaimables[r.entity] then
                     IssueReclaim(units, r.entity)
                     if i > 10 then break end
@@ -2029,7 +2031,7 @@ Platoon = Class(moho.platoon_methods) {
                             local buildingUnit = unit.UnitBeingBuilt
                             if buildingUnit and not buildingUnit.Dead and EntityCategoryContains(buildCat, buildingUnit) then
                                 local unitPos = unit:GetPosition()
-                                if unitPos and platoonPos and VDist2(platoonPos[1], platoonPos[3], unitPos[1], unitPos[3]) < assistRange then
+                                if unitPos and platoonPos and VDist2Sq(platoonPos[1], platoonPos[3], unitPos[1], unitPos[3]) < assistRange * assistRange then
                                     assistee = unit
                                     break
                                 end
@@ -2048,7 +2050,7 @@ Platoon = Class(moho.platoon_methods) {
                     for unitNum, unit in unitsBuilding do
                         if not unit.Dead and unit:IsUnitState('Building') then
                             local unitPos = unit:GetPosition()
-                            if unitPos and platoonPos and VDist2(platoonPos[1], platoonPos[3], unitPos[1], unitPos[3]) < assistRange then
+                            if unitPos and platoonPos and VDist2Sq(platoonPos[1], platoonPos[3], unitPos[1], unitPos[3]) < assistRange * assistRange then
                                 assistee = unit
                                 break
                             end
@@ -3294,7 +3296,8 @@ Platoon = Class(moho.platoon_methods) {
         local pos = self:GetPlatoonPosition()
         local unitsSet = true
         for k,v in self:GetPlatoonUnits() do
-            if VDist2(v:GetPosition()[1], v:GetPosition()[3], pos[1], pos[3]) > 40 then
+            -- distance is squared: 40 -> 1600
+            if VDist2Sq(v:GetPosition()[1], v:GetPosition()[3], pos[1], pos[3]) > 1600 then
                unitsSet = false
                break
             end
@@ -3617,7 +3620,9 @@ Platoon = Class(moho.platoon_methods) {
                 -- wait until we are close to the buildplace so we have intel
                 while not eng.Dead do
                     PlatoonPos = eng:GetPosition()
-                    if VDist2(PlatoonPos[1] or 0, PlatoonPos[3] or 0, buildLocation[1] or 0, buildLocation[3] or 0) < 12 then
+
+                    -- distance is squared: 12 -> 144
+                    if VDist2Sq(PlatoonPos[1] or 0, PlatoonPos[3] or 0, buildLocation[1] or 0, buildLocation[3] or 0) < 144 then
                         break
                     end
                     coroutine.yield(1)
