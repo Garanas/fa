@@ -289,26 +289,22 @@ end
 
 
 function AIGetMarkerLocations(aiBrain, markerType)
-    local markerList = {}
+    -- separate case
     if markerType == 'Start Location' then
-        local tempMarkers = AIGetMarkerLocations(aiBrain, 'Blank Marker')
+        local markerList = {}
+        -- get all blank markers and filter them
+        local tempMarkers = ScenarioUtils.GetMarkersByType('Blank Marker')
         for k, v in tempMarkers do
             if string.sub(v.Name, 1, 5) == 'ARMY_' then
                 table.insert(markerList, {Position = v.Position, Name = v.Name})
             end
         end
-    else
-        local markers = ScenarioUtils.GetMarkers()
-        if markers then
-            for k, v in markers do
-                if v.type == markerType then
-                    table.insert(markerList, {Position = v.position, Name = k})
-                end
-            end
-        end
+
+        return markerList
     end
 
-    return markerList
+    -- generic types
+    return ScenarioUtils.GetMarkersByType(markerType)
 end
 
 function AIGetMarkerLocationsEx(aiBrain, markerType)

@@ -77,6 +77,8 @@ end
 -- @param markerType An optional parameter to indicate an interest for a particular type.
 function GetMarkersByType(markerType)
 
+    LOG("Retrieving markers of type: " .. markerType)
+
     -- check if parameter is set, if not - help us all and return everything
     if not markerType then 
         return Scenario.MasterChain._MASTERCHAIN_.Markers
@@ -101,13 +103,13 @@ function GetMarkersByType(markerType)
         end
 
         -- add the markers of this type to the cache
-        markerTypeCache[type] = cache
+        markerTypeCache[markerType] = cache
 
-        LOG("ScenarioUtils: Cached markers of type: " .. markerType)
+        LOG("ScenarioUtils: Cached " .. table.getn(cache) .. " markers of type: " .. markerType)
     end
 
     -- return the cached markers
-    return markerTypeCache[type]
+    return markerTypeCache[markerType]
 end
 
 function GetMarkers()
