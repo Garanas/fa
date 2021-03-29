@@ -77,7 +77,8 @@ end
 -- @param markerType An optional parameter to indicate an interest for a particular type.
 function GetMarkersByType(markerType)
 
-    LOG("Retrieving markers of type: " .. markerType)
+    -- uncomment this to get an idea how much this helps
+    -- LOG("Retrieving markers of type: " .. markerType)
 
     -- check if parameter is set, if not - help us all and return everything
     if not markerType then 
