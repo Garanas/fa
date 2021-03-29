@@ -54,7 +54,7 @@ end
 local markerTypeCache = { }
 
 --- Flushes the entire cache
-function FlushEntireMarkerTypeCache()
+function FlushMarkerTypeCache()
     markerTypeCache = { }
 end
 
@@ -75,7 +75,7 @@ end
 --- Retrieves all markers in the scenario. If a type if filters the markers  
 -- and caches the first query with that type to speed up future queries.
 -- @param markerType An optional parameter to indicate an interest for a particular type.
-function GetMarkers(markerType)
+function GetMarkersByType(markerType)
 
     -- check if parameter is set, if not - help us all and return everything
     if not markerType then 
@@ -102,10 +102,16 @@ function GetMarkers(markerType)
 
         -- add the markers of this type to the cache
         markerTypeCache[type] = cache
+
+        LOG("ScenarioUtils: Cached markers of type: " .. markerType)
     end
 
     -- return the cached markers
     return markerTypeCache[type]
+end
+
+function GetMarkers()
+    return Scenario.MasterChain._MASTERCHAIN_.Markers
 end
 
 function GetMarker(name)

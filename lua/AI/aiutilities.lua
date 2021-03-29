@@ -2641,7 +2641,7 @@ function AIGetMarkerLocationsSorian(aiBrain, markerType)
     -- check if we are interested in a particular type
     local markerList = {}
     if markerType then 
-        markerList = ScenarioUtils.GetMarkers(markerType)
+        markerList = ScenarioUtils.GetMarkersByType(markerType)
     end
 
     -- add in tactical bases
