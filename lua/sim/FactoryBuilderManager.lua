@@ -47,7 +47,7 @@ FactoryBuilderManager = Class(BuilderManager) {
             if self.LocationActive and self.RallyPoint then
                 -- LOG('*AI DEBUG: Checking Active Rally Point')
                 local newRally = false
-                local bestDist = 99999
+                local bestDist
                 local rallyheight = GetTerrainHeight(self.RallyPoint[1], self.RallyPoint[3])
                 if self.Brain:GetNumUnitsAroundPoint(categories.STRUCTURE, self.RallyPoint, 15, 'Ally') > 0 then
                     -- LOG('*AI DEBUG: Searching for a new Rally Point Location')
@@ -61,9 +61,11 @@ FactoryBuilderManager = Class(BuilderManager) {
                             if self.Brain:GetNumUnitsAroundPoint(categories.STRUCTURE, tempPos, 15, 'Ally') > 0 then
                                 continue
                             end
-                            if not newRally or VDist2(tempPos[1], tempPos[3], self.RallyPoint[1], self.RallyPoint[3]) < bestDist then
+
+                            local distance = VDist2Sq(tempPos[1], tempPos[3], self.RallyPoint[1], self.RallyPoint[3])
+                            if not newRally or distance < bestDist then
                                 newRally = tempPos
-                                bestDist = VDist2(tempPos[1], tempPos[3], self.RallyPoint[1], self.RallyPoint[3])
+                                bestDist = distance
                             end
                         end
                     end
@@ -483,8 +485,8 @@ FactoryBuilderManager = Class(BuilderManager) {
             local expPoint = AIUtils.AIGetClosestMarkerLocation(self, 'Expansion Area', position[1], position[3])
 
             if expPoint and rally then
-                local rallyPointDistance = VDist2(position[1], position[3], rally[1], rally[3])
-                local expansionDistance = VDist2(position[1], position[3], expPoint[1], expPoint[3])
+                local rallyPointDistance = VDist2Sq(position[1], position[3], rally[1], rally[3])
+                local expansionDistance = VDist2Sq(position[1], position[3], expPoint[1], expPoint[3])
 
                 if expansionDistance < rallyPointDistance then
                     rally = expPoint
@@ -493,7 +495,8 @@ FactoryBuilderManager = Class(BuilderManager) {
         end
 
         -- Use factory location if no other rally or if rally point is far away
-        if not rally or VDist2(rally[1], rally[3], position[1], position[3]) > 75 then
+        -- squared distance: 75 -> 5625
+        if not rally or VDist2Sq(rally[1], rally[3], position[1], position[3]) > 75 then
             -- DUNCAN - added to try and vary the rally points.
             position = AIUtils.RandomLocation(position[1],position[3])
             rally = position

@@ -114,7 +114,7 @@ LocationIsOk = function(data, RangeCheckUnits)
     local InRange, RangeLimited = true, false
     local TaskName = data.TaskName
     local posM = data.Location
-    if data.ExtraInfo and data.ExtraInfo.DoRangeCheck then  # if we do a range check then find that there's a unit in range for the current position
+    if data.ExtraInfo and data.ExtraInfo.DoRangeCheck then  -- if we do a range check then find that there's a unit in range for the current position
         RangeLimited = true
         InRange = false
         if RangeCheckUnits then
