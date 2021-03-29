@@ -278,7 +278,7 @@ function MarkerLessThanDistance(aiBrain, markerType, distance, threatMin, threat
         loc = AIUtils.AIGetClosestMarkerLocation(aiBrain, markerType, startX, startZ)
     end
     if loc and loc[1] and loc[3] then
-        if VDist2(startX, startZ, loc[1], loc[3]) < distance and aiBrain:CanBuildStructureAt('ueb1102', loc) then
+        if VDist2Sq(startX, startZ, loc[1], loc[3]) < distance * distance and aiBrain:CanBuildStructureAt('ueb1102', loc) then
             return true
         end
     end

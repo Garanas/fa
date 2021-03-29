@@ -205,6 +205,7 @@ function AISortMarkersFromStartPos(aiBrain, markerList, maxNumber, tMin, tMax, t
         num = maxNumber
     end
 
+    -- todo: optimize this sorting mechanism: this is O(n^2) with a lot of expensive operations
     local sortedMarkerList = {}
     for i = 1, num do
         local lowest = nil
@@ -213,7 +214,7 @@ function AISortMarkersFromStartPos(aiBrain, markerList, maxNumber, tMin, tMax, t
             if v.Position then
                 local x = v.Position[1]
                 local z = v.Position[3]
-                distance = VDist2(startPosX, startPosZ, x, z)
+                distance = VDist2Sq(startPosX, startPosZ, x, z)
                 local threat
                 if threatCheck then
                     threat = aiBrain:GetThreatAtPosition(v.Position, tRings, true, tType or 'Overall')
@@ -256,6 +257,7 @@ function AISortMarkersFromLastPos(aiBrain, markerList, maxNumber, tMin, tMax, tR
         num = maxNumber
     end
 
+    -- todo: optimize this sorting mechanism: this is O(n^2) with a lot of expensive operations
     local sortedMarkerList = {}
     local lastX = startPosX
     local lastZ = startPosZ
@@ -266,7 +268,7 @@ function AISortMarkersFromLastPos(aiBrain, markerList, maxNumber, tMin, tMax, tR
         for k, v in markerList do
             local x = v.Position[1]
             local z = v.Position[3]
-            distance = VDist2(lastX, lastZ, x, z)
+            distance = VDist2Sq(lastX, lastZ, x, z)
             if threatCheck then
                 threat = aiBrain:GetThreatAtPosition(v.Position, tRings, true, tType or 'Overall')
             end
@@ -390,9 +392,10 @@ end
 function AIGetMarkersAroundLocation(aiBrain, markerType, pos, radius, threatMin, threatMax, threatRings, threatType)
     local markers = AIGetMarkerLocations(aiBrain, markerType)
     local returnMarkers = {}
+    local radiusSq = radius * radius
     for _, v in markers do
-        local dist = VDist2(pos[1], pos[3], v.Position[1], v.Position[3])
-        if dist < radius then
+        local dist = VDist2Sq(pos[1], pos[3], v.Position[1], v.Position[3])
+        if dist < radiusSq then
             if not threatMin then
                 table.insert(returnMarkers, v)
             else
@@ -413,7 +416,8 @@ function AIGetMarkerLeastUnits(aiBrain, markerType, markerRadius, pos, posRad, u
         local tempMarkers = AIGetMarkersAroundLocation(aiBrain, 'Blank Marker', pos, posRad, tMin, tMax, tRings, tType)
         local startX, startZ = aiBrain:GetArmyStartPos()
         for k, v in tempMarkers do
-            if string.sub(v.Name, 1, 5) == 'ARMY_' and VDist2(startX, startZ, v.Position[1], v.Position[3]) > 20 then
+            -- squared distance: 20 -> 400
+            if string.sub(v.Name, 1, 5) == 'ARMY_' and VDist2Sq(startX, startZ, v.Position[1], v.Position[3]) > 400 then
                 table.insert(markers, v)
             end
         end
@@ -680,9 +684,8 @@ function AIGetClosestMarkerLocation(aiBrain, markerType, startX, startZ, extraTy
     local loc, distance, lowest, name = nil
     for _, v in markerList do
         local x = v.Position[1]
-        local y = v.Position[2]
         local z = v.Position[3]
-        distance = VDist2(startX, startZ, x, z)
+        distance = VDist2Sq(startX, startZ, x, z)
         if not lowest or distance < lowest then
             loc = v.Position
             name = v.Name
@@ -701,7 +704,7 @@ function AIGetClosestThreatMarkerLoc(aiBrain, markerType, startX, startZ, threat
     for k, v in markerList do
         local x = v.Position[1]
         local z = v.Position[3]
-        distance = VDist2(startX, startZ, x, z)
+        distance = VDist2Sq(startX, startZ, x, z)
         local threat = aiBrain:GetThreatAtPosition({x, 0, z}, rings, true, threatType or 'Overall')
         if (not lowest or distance < lowest) and threat >= threatMin and threat <= threatMax then
             loc = v.Position
@@ -760,10 +763,10 @@ function AIFindDefensiveArea(aiBrain, unit, category, range)
 
                 if not highNum or tempNum > highNum then
                     highNum = tempNum
-                    distance = VDist2(startPosX, startPosZ, checkPos[1], checkPos[3])
+                    distance = VDist2Sq(startPosX, startPosZ, checkPos[1], checkPos[3])
                     highPoint = checkPos
                 elseif tempNum == highNum then
-                    local tempDist = VDist2(startPosX, startPosZ, checkPos[1], checkPos[3])
+                    local tempDist = VDist2Sq(startPosX, startPosZ, checkPos[1], checkPos[3])
                     if tempDist < distance then
                         highNum = tempNum
                         highPoint = checkPos
@@ -979,8 +982,9 @@ function GetBasePatrolPoints(aiBrain, location, radius, layer)
 
     local vecs = aiBrain:GetBaseVectors()
     local locList = {}
+    local radiusSq = radius * radius
     for k, v in vecs do
-        if LayerCheckPosition(v, layer) and VDist2(v[1], v[3], location[1], location[3]) < radius then
+        if LayerCheckPosition(v, layer) and VDist2Sq(v[1], v[3], location[1], location[3]) < radiusSq then
             table.insert(locList, v)
         end
     end
@@ -998,7 +1002,7 @@ function GetBasePatrolPoints(aiBrain, location, radius, layer)
         for k, v in locList do
             local x = v[1]
             local z = v[3]
-            distance = VDist2(lastX, lastZ, x, z)
+            distance = VDist2Sq(lastX, lastZ, x, z)
             if not lowest or distance < lowest then
                 pos = v
                 lowest = distance
@@ -1769,17 +1773,20 @@ function EngineerMoveWithSafePath(aiBrain, unit, destination)
     end
     local pos = unit:GetPosition()
     -- don't check a path if we are in build range
-    if VDist2(pos[1], pos[3], destination[1], destination[3]) < 14 then
+    -- squared distance: 14 -> 196
+    if VDist2Sq(pos[1], pos[3], destination[1], destination[3]) < 196 then
         return true
     end
     local result, bestPos = unit:CanPathTo(destination)
     local bUsedTransports = false
     -- Increase check to 300 for transports
-    if not result or VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 300 * 300
+    -- squared distance: 300 -> 90000
+    if not result or VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 90000
     and unit.PlatoonHandle and not EntityCategoryContains(categories.COMMAND, unit) then
         -- If we can't path to our destination, we need, rather than want, transports
         local needTransports = not result
-        if VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 300 * 300 then
+        -- squared distance: 300 -> 90000
+        if VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 90000 then
             needTransports = true
         end
 
@@ -1788,7 +1795,9 @@ function EngineerMoveWithSafePath(aiBrain, unit, destination)
 
         if bUsedTransports then
             return true
-        elseif VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 512 * 512 then
+
+        -- squared distance: 512 -> 262144
+        elseif VDist2Sq(pos[1], pos[3], destination[1], destination[3]) > 262144 then
             -- If over 512 and no transports dont try and walk!
             return false
         end
@@ -1877,7 +1886,7 @@ function GetThreatDistance(aiBrain, position, threatCutoff)
     local closestHighThreat = false
     for k, v in threatTable do
         if v[3] > threatCutoff then
-            local dist = VDist2(v[1], v[2], position[1], position[3])
+            local dist = VDist2Sq(v[1], v[2], position[1], position[3])
             if not closestHighThreat or dist < closestHighThreat then
                 closestHighThreat = dist
             end
@@ -2011,10 +2020,11 @@ function GetBasePatrolPointsSorian(aiBrain, location, radius, layer)
         layer = 'Land'
     end
 
+    local radiusSq = radius * radius 
     local vecs = aiBrain:GetBaseVectors()
     local locList = {}
     for _, v in vecs do
-        if LayerCheckPosition(v, layer) and VDist2(v[1], v[3], location[1], location[3]) < radius then
+        if LayerCheckPosition(v, layer) and VDist2Sq(v[1], v[3], location[1], location[3]) < radiusSq then
             table.insert(locList, v)
         end
     end
@@ -2033,7 +2043,7 @@ function GetBasePatrolPointsSorian(aiBrain, location, radius, layer)
     for _, v in ArmyBrains do
         if IsEnemy(v:GetArmyIndex(), aiBrain:GetArmyIndex()) then
             local estartX, estartZ = v:GetArmyStartPos()
-            local tempdistance = VDist2(startX, startZ, estartX, estartZ)
+            local tempdistance = VDist2Sq(startX, startZ, estartX, estartZ)
             if not edistance or tempdistance < edistance then
                 edistance = tempdistance
                 closeX = estartX
@@ -2048,9 +2058,9 @@ function GetBasePatrolPointsSorian(aiBrain, location, radius, layer)
             local x = v[1]
             local z = v[3]
             if i == 1 then
-                distance = VDist2(closeX, closeZ, x, z)
+                distance = VDist2Sq(closeX, closeZ, x, z)
             else
-                distance = VDist2(lastX, lastZ, x, z)
+                distance = VDist2Sq(lastX, lastZ, x, z)
             end
             if not lowest or distance < lowest then
                 pos = v
@@ -2309,10 +2319,11 @@ end
 
 function AIGetAttackPointsAroundLocation(aiBrain, pos, maxRange)
     local markerList = {}
+    local maxRangeSq = maxRange * maxRange
     if aiBrain.AttackPoints then
         for k, v in aiBrain.AttackPoints do
-            local dist = VDist2(pos[1], pos[3], v.Position[1], v.Position[3])
-            if dist < maxRange then
+            local dist = VDist2Sq(pos[1], pos[3], v.Position[1], v.Position[3])
+            if dist < maxRangeSq then
                 table.insert(markerList, {Position = v.Position})
             end
         end
@@ -2449,7 +2460,9 @@ function AIFindBrainNukeTargetInRangeSorian(aiBrain, platoon, maxRange, atkPri, 
                 for _, w in ArmyBrains do
                     if IsAlly(w:GetArmyIndex(), aiBrain:GetArmyIndex()) or (aiBrain:GetArmyIndex() == w:GetArmyIndex()) then
                         local estartX, estartZ = w:GetArmyStartPos()
-                        if VDist2(estartX, estartZ, unitPos[1], unitPos[3]) < 220 then
+
+                        -- squared distance: 220 -> 48400
+                        if VDist2Sq(estartX, estartZ, unitPos[1], unitPos[3]) < 48400 then
                             dupTarget = true
                         end
                     end
@@ -2597,10 +2610,10 @@ function AIFindDefensiveAreaSorian(aiBrain, unit, category, range, runShield)
                 end
                 if not highNum or tempNum > highNum then
                     highNum = tempNum
-                    distance = VDist2(startPosX, startPosZ, checkPos[1], checkPos[3])
+                    distance = VDist2Sq(startPosX, startPosZ, checkPos[1], checkPos[3])
                     highPoint = checkPos
                 elseif tempNum == highNum then
-                    local tempDist = VDist2(startPosX, startPosZ, checkPos[1], checkPos[3])
+                    local tempDist = VDist2Sq(startPosX, startPosZ, checkPos[1], checkPos[3])
                     if tempDist < distance then
                         highNum = tempNum
                         highPoint = checkPos

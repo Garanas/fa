@@ -531,6 +531,7 @@ function BaseManagerAssistThread(platoon)
     end
 
     local assistRange = assistData.AssistRange or 80
+    local assistRangeSq = assistRange * assistRange
     local counter = 0
     local unit = platoonUnits[1]
     while counter < (assistData.Time or 200) do
@@ -584,7 +585,7 @@ function BaseManagerAssistThread(platoon)
                                 if not EntityCategoryContains(categories.FACTORY, constructionUnit) or aiBrain:PBMFactoryLocationCheck(constructionUnit, platoon.PlatoonData.BaseName) then
                                     -- make sure unit is within valid assist range
                                     local unitPos = constructionUnit:GetPosition()
-                                    if unitPos and platoonPos and VDist2(platoonPos[1], platoonPos[3], unitPos[1], unitPos[3]) < assistRange then
+                                    if unitPos and platoonPos and VDist2Sq(platoonPos[1], platoonPos[3], unitPos[1], unitPos[3]) < assistRangeSq then
                                         assistee = constructionUnit
                                         break
                                     end

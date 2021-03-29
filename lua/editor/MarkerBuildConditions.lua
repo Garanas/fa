@@ -6,7 +6,7 @@
 -- **  Summary  : Generic AI Platoon Build Conditions
 -- **             Build conditions always return true or false
 -- **
--- **  Copyright © 2005 Gas Powered Games, Inc.  All rights reserved.
+-- **  Copyright ï¿½ 2005 Gas Powered Games, Inc.  All rights reserved.
 -- ****************************************************************************
 
 local AIUtils = import('/lua/ai/aiutilities.lua')
@@ -34,7 +34,8 @@ function MarkerGreaterThanDistance(aiBrain, markerType, distance, threatMin, thr
     else
         loc = AIUtils.AIGetClosestMarkerLocation(aiBrain, markerType, startX, startZ)
     end
-    if loc and VDist2(startX, startZ, loc[1], loc[3]) > distance then
+
+    if loc and VDist2Sq(startX, startZ, loc[1], loc[3]) > distance * distance then
         return true
     end
     return false
@@ -64,7 +65,7 @@ function MarkerLessThanDistance(aiBrain, markerType, distance, threatMin, threat
         loc = AIUtils.AIGetClosestMarkerLocation(aiBrain, markerType, startX, startZ)
     end
     if loc and loc[1] and loc[3] then
-        if VDist2(startX, startZ, loc[1], loc[3]) < distance then
+        if VDist2Sq(startX, startZ, loc[1], loc[3]) < distance * distance then
             return true
         end
     end

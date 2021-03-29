@@ -3,7 +3,7 @@
 -- Author(s): Dru Staltman, John Comes
 -- Summary  : Generic AI Platoon Build Conditions
 --           Build conditions always return true or false
--- Copyright © 2005 Gas Powered Games, Inc.  All rights reserved.
+-- Copyright ï¿½ 2005 Gas Powered Games, Inc.  All rights reserved.
 -----------------------------------------------------------------
 
 local AIUtils = import('/lua/ai/aiutilities.lua')
@@ -246,6 +246,7 @@ function CategoriesBeingBuilt(aiBrain, baseName, catTable)
 
     local basePos = aiBrain.BaseManagers[baseName]:GetPosition()
     local baseRad = aiBrain.BaseManagers[baseName].Radius
+    local baseRadSq = baseRad * baseRad
     if not basePos or not baseRad then
         return false
     end
@@ -259,7 +260,7 @@ function CategoriesBeingBuilt(aiBrain, baseName, catTable)
                     local buildCat = ParseEntityCategory(buildeeCat)
                     if EntityCategoryContains(buildCat, buildingUnit) then
                         local unitPos = unit:GetPosition()
-                        if unitPos and VDist2(basePos[1], basePos[3], unitPos[1], unitPos[3]) < baseRad then
+                        if unitPos and VDist2Sq(basePos[1], basePos[3], unitPos[1], unitPos[3]) < baseRadSq then
                             return true
                         end
                     end
