@@ -95,8 +95,8 @@ ADFTractorClaw = Class(DefaultBeamWeapon) {
             local unitTarget = target:GetSource()
             local unitPos = unitTarget:GetPosition()
             local reconPos = target:GetPosition()
-            local dist = VDist2(unitPos[1], unitPos[3], reconPos[1], reconPos[3])
-            if dist < 10 then
+            local dist = VDist2Sq(unitPos[1], unitPos[3], reconPos[1], reconPos[3])
+            if dist < 100 then
                 return unitTarget
             end
         end

@@ -3154,8 +3154,8 @@ AIBrain = Class(moho.aibrain_methods) {
             table.sort(self.InterestList.HighPriority, function(a, b)
                 if a.LastScouted == b.LastScouted then
                     local MainPos = self.BuilderManagers.MAIN.Position
-                    local distA = VDist2(MainPos[1], MainPos[3], a.Position[1], a.Position[3])
-                    local distB = VDist2(MainPos[1], MainPos[3], b.Position[1], b.Position[3])
+                    local distA = VDist2Sq(MainPos[1], MainPos[3], a.Position[1], a.Position[3])
+                    local distB = VDist2Sq(MainPos[1], MainPos[3], b.Position[1], b.Position[3])
 
                     return distA < distB
                 else
@@ -3517,8 +3517,8 @@ AIBrain = Class(moho.aibrain_methods) {
                     table.sort(self.InterestList.HighPriority, function(a, b)
                         if a.LastScouted == b.LastScouted then
                             local MainPos = self.BuilderManagers.MAIN.Position
-                            local distA = VDist2(MainPos[1], MainPos[3], a.Position[1], a.Position[3])
-                            local distB = VDist2(MainPos[1], MainPos[3], b.Position[1], b.Position[3])
+                            local distA = VDist2Sq(MainPos[1], MainPos[3], a.Position[1], a.Position[3])
+                            local distB = VDist2Sq(MainPos[1], MainPos[3], b.Position[1], b.Position[3])
 
                             return distA < distB
                         else
@@ -3726,8 +3726,8 @@ AIBrain = Class(moho.aibrain_methods) {
         table.sort(list, function(a, b)
             if a.LastScouted == b.LastScouted then
                 local MainPos = self.BuilderManagers.MAIN.Position
-                local distA = VDist2(MainPos[1], MainPos[3], a.Position[1], a.Position[3])
-                local distB = VDist2(MainPos[1], MainPos[3], b.Position[1], b.Position[3])
+                local distA = VDist2Sq(MainPos[1], MainPos[3], a.Position[1], a.Position[3])
+                local distB = VDist2Sq(MainPos[1], MainPos[3], b.Position[1], b.Position[3])
 
                 return distA < distB
             else
