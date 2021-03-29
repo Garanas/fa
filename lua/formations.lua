@@ -1387,7 +1387,8 @@ function GetLargeAirPositions(unitsList, airBlock)
             local blocked = false
             for i = numResults, 1, -1 do -- Don't change this to a simple forward loop or it can take 15x as long with large numbers.
                 local data = results[i]
-                if VDist2(xPos, yPos, data.xPos, data.yPos) < radius + data.size / 2 then
+                local threshold = (radius + data.size / 2)
+                if VDist2Sq(xPos, yPos, data.xPos, data.yPos) < threshold * threshold then
                     blocked = true
                     break
                 end
