@@ -896,9 +896,9 @@ Platoon = Class(moho.platoon_methods) {
             IssueClearCommands(self:GetPlatoonUnits())
             if path then
                 local position = self:GetPlatoonPosition()
-                if not success or VDist2(position[1], position[3], bestMarker.Position[1], bestMarker.Position[3]) > 512 then
+                if not success or VDist2Sq(position[1], position[3], bestMarker.Position[1], bestMarker.Position[3]) > 512 * 512 then
                     usedTransports = AIAttackUtils.SendPlatoonWithTransportsNoCheck(aiBrain, self, bestMarker.Position, true)
-                elseif VDist2(position[1], position[3], bestMarker.Position[1], bestMarker.Position[3]) > 256 then
+                elseif VDist2Sq(position[1], position[3], bestMarker.Position[1], bestMarker.Position[3]) > 256 * 256 then
                     usedTransports = AIAttackUtils.SendPlatoonWithTransportsNoCheck(aiBrain, self, bestMarker.Position, false)
                 end
                 if not usedTransports then
