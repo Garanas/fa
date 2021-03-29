@@ -4563,11 +4563,16 @@ Platoon = Class(moho.platoon_methods) {
             IssueClearCommands(self:GetPlatoonUnits())
             if path then
                 local position = self:GetPlatoonPosition()
-                if VDist2(position[1], position[3], bestMarker.Position[1], bestMarker.Position[3]) > 512 then
+
+                -- distance is squared: 512 -> 262144
+                if VDist2Sq(position[1], position[3], bestMarker.Position[1], bestMarker.Position[3]) > 262144 then
                     usedTransports = AIAttackUtils.SendPlatoonWithTransportsSorian(aiBrain, self, bestMarker.Position, true, false, false)
-                elseif VDist2(position[1], position[3], bestMarker.Position[1], bestMarker.Position[3]) > 256 then
+
+                -- distance is squared: 256 -> 65536
+                elseif VDist2Sq(position[1], position[3], bestMarker.Position[1], bestMarker.Position[3]) > 65536 then
                     usedTransports = AIAttackUtils.SendPlatoonWithTransportsSorian(aiBrain, self, bestMarker.Position, false, false, false)
                 end
+
                 if not usedTransports then
                     local pathLength = table.getn(path)
                     for i=1, pathLength-1 do
