@@ -1286,7 +1286,8 @@ function PlatoonGenerateSafePathTo(aiBrain, platoonLayer, start, destination, op
     local finalPath = {}
 
     --If we are within 100 units of the destination, don't bother pathing. (Sorian and Duncan AI)
-    if (aiBrain.Sorian or aiBrain.Duncan) and (VDist2(start[1], start[3], destination[1], destination[3]) <= 100
+    -- squared distance: 100 -> 10000
+    if (aiBrain.Sorian or aiBrain.Duncan) and (VDist2Sq(start[1], start[3], destination[1], destination[3]) <= 10000
     or (testPathDist and VDist2Sq(start[1], start[3], destination[1], destination[3]) <= testPathDistSq)) then
         table.insert(finalPath, destination)
         return finalPath

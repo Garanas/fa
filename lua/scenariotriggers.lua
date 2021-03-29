@@ -291,14 +291,15 @@ function UnitToPositionDistanceTriggerThread(cb, unit, marker, distance, name)
     if type(marker) == 'string' then
         marker = ScenarioUtils.MarkerToPosition(marker)
     end
+    local distanceSq = distance * distance
     local fired = false
     while not fired do
         if unit.Dead then
             return
         else
             local position = unit:GetPosition()
-            local value = VDist2(position[1], position[3], marker[1], marker[3])
-            if value <= distance then
+            local valueSq = VDist2Sq(position[1], position[3], marker[1], marker[3])
+            if valueSq <= distanceSq then
                 fired = true
                 if name then
                     cb(TriggerManager, name, unit)

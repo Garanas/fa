@@ -2200,16 +2200,10 @@ function GetTransportsThread(platoon)
                     end
                 end
                 if table.getn(transports) > 0 then 
-                
                     -- sort them on distance, having the closest first
                     table.sort(transports, function(a, b)
                         return a.Distance < b.Distance
                     end )
-
-                    -- 
-                    for k, data in transports do 
-                        LOG(data.Distance)
-                    end
 
                     -- Take transports as needed
                     for i = 1, table.getn(transports) do

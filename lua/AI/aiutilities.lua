@@ -1363,31 +1363,19 @@ function GetTransports(platoon, units)
     local numTransports = 0
     local transSlotTable = {}
     if table.getn(transports) > 0 then
-        local sortedList = {}
-        -- Sort distances
-        for k = 1, table.getn(transports) do
-            local lowest = -1
-            local key, value
-            for j, u in transports do
-                if lowest == -1 or u.Distance < lowest then
-                    lowest = u.Distance
-                    value = u
-                    key = j
-                end
-            end
-            sortedList[k] = value
-            -- Remove from unsorted table
-            table.remove(transports, key)
-        end
+        -- sort them on distance, having the closest first
+        table.sort(transports, function(a, b)
+            return a.Distance < b.Distance
+        end )
 
         -- Take transports as needed
-        for i = 1, table.getn(sortedList) do
-            if transportsNeeded and table.getn(sortedList[i].Unit:GetCargo()) < 1 and not sortedList[i].Unit:IsUnitState('TransportLoading') then
-                local id = sortedList[i].Id
-                aiBrain:AssignUnitsToPlatoon(platoon, {sortedList[i].Unit}, 'Scout', 'GrowthFormation')
+        for i = 1, table.getn(transports) do
+            if transportsNeeded and table.getn(transports[i].Unit:GetCargo()) < 1 and not transports[i].Unit:IsUnitState('TransportLoading') then
+                local id = transports[i].Id
+                aiBrain:AssignUnitsToPlatoon(platoon, {transports[i].Unit}, 'Scout', 'GrowthFormation')
                 numTransports = numTransports + 1
                 if not transSlotTable[id] then
-                    transSlotTable[id] = GetNumTransportSlots(sortedList[i].Unit)
+                    transSlotTable[id] = GetNumTransportSlots(transports[i].Unit)
                 end
                 local tempSlots = {}
                 tempSlots.Small = transSlotTable[id].Small

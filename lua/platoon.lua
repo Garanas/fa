@@ -5256,6 +5256,7 @@ Platoon = Class(moho.platoon_methods) {
                 while not scout.Dead and not scout:IsIdleState() do
 
                     --If we're close enough...
+                    -- squared distance: 125 -> 15625
                     if VDist2Sq(vec[1], vec[3], scout:GetPosition()[1], scout:GetPosition()[3]) < 15625 then
                         if mustScoutArea then
                             --Untag and remove
