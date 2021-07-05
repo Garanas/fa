@@ -10,6 +10,24 @@ local Explosion = import('/lua/defaultexplosions.lua')
 local DefaultDamage = import('/lua/sim/defaultdamage.lua')
 local Flare = import('/lua/defaultantiprojectile.lua').Flare
 
+-- global scope to make sure the table is allocated only once
+ImpactTable = {
+      Water = { "FxImpactWater", "FxWaterHitScale" }
+    , Underwater = { "FxImpactUnderWater", "FxUnderWaterHitScale" }
+    , UnitUnderwater = { "FxImpactUnderWater", "FxUnderWaterHitScale" }
+    , Unit = { "FxImpactUnit", "FxUnitHitScale" }
+    , UnitAir = { "FxImpactAirUnit", "FxAirUnitHitScale" }
+    , Terrain = { "FxImpactLand", "FxLandHitScale" }
+    , Air = { "FxImpactNone", "FxNoneHitScale" }
+    , Projectile = { "FxImpactProjectile", "FxProjectileHitScale" }
+    , ProjectileUnderwater = { "FxImpactProjectileUnderWater", "FxProjectileUnderWaterHitScale" }
+    , Prop = { "FxImpactProp", "FxPropHitScale" }
+    , Shield = { "FxImpactShield", "FxShieldHitScale" }
+}
+
+-- local scope to quickly get a reference to the table
+local lImpactTable = ImpactTable
+
 Projectile = Class(moho.projectile_methods, Entity) {
     PassDamageData = function(self, DamageData)
         self.DamageData.DamageRadius = DamageData.DamageRadius
@@ -83,29 +101,31 @@ Projectile = Class(moho.projectile_methods, Entity) {
     DestroyOnImpact = true,
     FxImpactTrajectoryAligned = true,
 
-    FxImpactAirUnit = {},
-    FxImpactLand = {},
-    FxImpactNone = {},
-    FxImpactProp = {},
-    FxImpactShield = {},
-    FxImpactWater = {},
-    FxImpactUnderWater = {},
-    FxImpactUnit = {},
-    FxImpactProjectile = {},
-    FxImpactProjectileUnderWater = {},
-    FxOnKilled = {},
+    -- these are allocated on demand by script files of projectiles
+    -- FxImpactAirUnit = {},
+    -- FxImpactLand = {},
+    -- FxImpactNone = {},
+    -- FxImpactProp = {},
+    -- FxImpactShield = {},
+    -- FxImpactWater = {},
+    -- FxImpactUnderWater = {},
+    -- FxImpactUnit = {},
+    -- FxImpactProjectile = {},
+    -- FxImpactProjectileUnderWater = {},
+    -- FxOnKilled = {},
 
-    FxAirUnitHitScale = 1,
-    FxLandHitScale = 1,
-    FxNoneHitScale = 1,
-    FxPropHitScale = 1,
-    FxProjectileHitScale = 1,
-    FxProjectileUnderWaterHitScale = 1,
-    FxShieldHitScale = 1,
-    FxUnderWaterHitScale = 0.25,
-    FxUnitHitScale = 1,
-    FxWaterHitScale = 1,
-    FxOnKilledScale = 1,
+    -- these are allocated on demand by script files of projectiles
+    -- FxAirUnitHitScale = 1,
+    -- FxLandHitScale = 1,
+    -- FxNoneHitScale = 1,
+    -- FxPropHitScale = 1,
+    -- FxProjectileHitScale = 1,
+    -- FxProjectileUnderWaterHitScale = 1,
+    -- FxShieldHitScale = 1,
+    -- FxUnderWaterHitScale = 0.25,
+    -- FxUnitHitScale = 1,
+    -- FxWaterHitScale = 1,
+    -- FxOnKilledScale = 1,
 
     FxImpactLandScorch = false,
     FxImpactLandScorchScale = 1.0,
@@ -331,43 +351,12 @@ Projectile = Class(moho.projectile_methods, Entity) {
             self:PlaySound(bpAud.Impact)
         end
 
-        -- ImpactEffects
-        if targetType == 'Water' then
-            ImpactEffects = self.FxImpactWater
-            ImpactEffectScale = self.FxWaterHitScale
-        elseif targetType == 'Underwater' or targetType == 'UnitUnderwater' then
-            ImpactEffects = self.FxImpactUnderWater
-            ImpactEffectScale = self.FxUnderWaterHitScale
-        elseif targetType == 'Unit' then
-            ImpactEffects = self.FxImpactUnit
-            ImpactEffectScale = self.FxUnitHitScale
-        elseif targetType == 'UnitAir' then
-            ImpactEffects = self.FxImpactAirUnit
-            ImpactEffectScale = self.FxAirUnitHitScale
-        elseif targetType == 'Terrain' then
-            ImpactEffects = self.FxImpactLand
-            ImpactEffectScale = self.FxLandHitScale
-            if self.FxImpactLandScorch then
-                Explosion.CreateRandomScorchSplatAtObject(self, self.FxImpactLandScorchScale, 150, 20, self.Army)
-            end
-        elseif targetType == 'Air' then
-            ImpactEffects = self.FxImpactNone
-            ImpactEffectScale = self.FxNoneHitScale
-        elseif targetType == 'Projectile' then
-            ImpactEffects = self.FxImpactProjectile
-            ImpactEffectScale = self.FxProjectileHitScale
-        elseif targetType == 'ProjectileUnderwater' then
-            ImpactEffects = self.FxImpactProjectileUnderWater
-            ImpactEffectScale = self.FxProjectileUnderWaterHitScale
-        elseif targetType == 'Prop' then
-            ImpactEffects = self.FxImpactProp
-            ImpactEffectScale = self.FxPropHitScale
-        elseif targetType == 'Shield' then
-            ImpactEffects = self.FxImpactShield
-            ImpactEffectScale = self.FxShieldHitScale
-        else
-            LOG('*ERROR: Projectile:OnImpact(): UNKNOWN TARGET TYPE ', repr(targetType))
-        end
+        -- retrieve impact data
+        local impactData = lImpactTable[targetType]
+
+        -- make sure they have sane defaults if applicable
+        ImpactEffects = impactData[1] or { }
+        ImpactEffectScale = impactData[2] or 1
 
         local TerrainEffects = self:GetTerrainEffects(targetType, bp.Display.ImpactEffects.Type)
         self:CreateImpactEffects(self.Army, ImpactEffects, ImpactEffectScale)
