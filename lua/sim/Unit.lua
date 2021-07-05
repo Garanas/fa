@@ -1222,7 +1222,6 @@ Unit = Class(moho.unit_methods) {
 
         -- apply death animation on half built units (do not apply for ML and mega)
         local FractionThreshold = bp.General.FractionThreshold or 0.5
-        LOG(FractionThreshold)
         if self.PlayDeathAnimation and self:GetFractionComplete() > FractionThreshold then
             self:ForkThread(self.PlayAnimationThread, 'AnimationDeath')
             self.DisallowCollisions = true

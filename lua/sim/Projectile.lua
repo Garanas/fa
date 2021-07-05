@@ -10,6 +10,12 @@ local Explosion = import('/lua/defaultexplosions.lua')
 local DefaultDamage = import('/lua/sim/defaultdamage.lua')
 local Flare = import('/lua/defaultantiprojectile.lua').Flare
 
+-- caching into local scope for performance
+local Bps = __blueprints
+local Damage = Damage
+local DamageArea = DamageArea
+
+
 -- global scope to make sure the table is allocated only once
 ImpactTable = {
       Water = { "FxImpactWater", "FxWaterHitScale" }
@@ -236,7 +242,7 @@ Projectile = Class(moho.projectile_methods, Entity) {
     end,
 
     OnKilled = function(self, instigator, type, overkillRatio)
-        self:CreateImpactEffects(self.Army, self.FxOnKilled, self.FxOnKilledScale)
+        self:CreateImpactEffects(self.Army, self.FxOnKilled or { }, self.FxOnKilledScale or 1.0)
         self:Destroy()
     end,
 
@@ -355,8 +361,8 @@ Projectile = Class(moho.projectile_methods, Entity) {
         local impactData = lImpactTable[targetType]
 
         -- make sure they have sane defaults if applicable
-        ImpactEffects = impactData[1] or { }
-        ImpactEffectScale = impactData[2] or 1
+        ImpactEffects = self[impactData[1]] or { }
+        ImpactEffectScale = self[impactData[2]] or 1
 
         local TerrainEffects = self:GetTerrainEffects(targetType, bp.Display.ImpactEffects.Type)
         self:CreateImpactEffects(self.Army, ImpactEffects, ImpactEffectScale)
