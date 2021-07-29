@@ -17,6 +17,13 @@ local CreateEmitterOnEntity = CreateEmitterOnEntity
 local CreateEmitterAtBone = CreateEmitterAtBone
 
 local Warp = Warp
+local Random = Random 
+
+local MathCeil = MathCeil 
+local MathMin = math.min 
+local MathMax = math.max 
+local MathAbs = math.abs 
+local MathPow = math.pow
 
 function CreateEffects(obj, army, EffectTable)
 
@@ -207,7 +214,7 @@ function CreateBuildCubeThread(unitBeingBuilt, builder, OnBeingBuiltEffectsBag)
         if lComplete < cComplete and not BuildBaseEffect:BeenDestroyed() then
             proj = BuildBaseEffect:CreateProjectile('/effects/Entities/UEFBuildEffect/UEFBuildEffect02_proj.bp', 0, y * (1 - cComplete), 0, nil, nil, nil)
             OnBeingBuiltEffectsBag:Add(proj)
-            slice = math.abs(lComplete - cComplete)
+            slice = MathAbs(lComplete - cComplete)
             proj:SetScale(x, y * slice, z)
             BuildBaseEffect:SetScale(x, y * (1 - cComplete), z)
         end
@@ -435,7 +442,7 @@ function CreateAeonBuildBaseThread(unitBeingBuilt, builder, EffectsBag)
 
     local fraction = unitBeingBuilt:GetFractionComplete()
     while not unitBeingBuilt.Dead and fraction < 1 do
-        scale = 1.2 - math.pow(fraction, 4)
+        scale = 1.2 - MathPow(fraction, 4)
         BuildBaseEffect:SetScale(sx * scale, 1.5 * sy * scale, sz * scale)
         slider:SetGoal(0, (fraction * sy - sy), 0)
         WaitSeconds(0.1)
@@ -499,7 +506,7 @@ function SpawnBuildBots(builder, unitBeingBuilt, BuildEffectsBag)
     -- keeps track of the maximum number of build bots
     if not builder.BuildMaximumBots then 
         -- build power is converted into bots, clamp to 10
-        builder.BuildMaximumBots = math.min(math.ceil((10 + builder:GetBuildRate()) / 15), 10)
+        builder.BuildMaximumBots = MathMin(MathCeil((10 + builder:GetBuildRate()) / 15), 10)
     end
 
     -- keeps track of the build bots themselves
@@ -514,8 +521,6 @@ function SpawnBuildBots(builder, unitBeingBuilt, BuildEffectsBag)
 
     -- If is new, won't spawn build bots if they might accidentally capture the unit
     if unitBeingBuiltArmy and ( builder.Army == unitBeingBuiltArmy or IsHumanUnit(unitBeingBuilt) ) then
-
-        builder:DetachAll(0)
 
         local x, y, z = builder:GetPositionXYZ()
         local q = builder:GetOrientation()
@@ -542,7 +547,7 @@ function SpawnBuildBots(builder, unitBeingBuilt, BuildEffectsBag)
             ChangeState(bot, bot.BuildState)
         end
 
-        return BuildBots
+        return BuildBots, BuildMaximumBots
     end
 end
 
@@ -646,7 +651,7 @@ function CreateAeonFactoryBuildingEffects(builder, unitBeingBuilt, BuildEffectBo
     local BuildBaseEffect = unitBeingBuilt:CreateProjectile('/effects/entities/AeonBuildEffect/AeonBuildEffect01_proj.bp', 0, 0, 1, nil, nil, nil)
     if builder:IsPaused() then
         local fraction = unitBeingBuilt:GetFractionComplete()
-        local scale = 1 - math.pow(fraction, 2)
+        local scale = 1 - MathPow(fraction, 2)
         BuildBaseEffect:SetScale(sx * scale, 1.5 * sy * scale, sz * scale)
     else
         BuildBaseEffect:SetScale(sx, 1.5 * sy, sz)
@@ -689,7 +694,7 @@ function CreateAeonFactoryBuildingEffects(builder, unitBeingBuilt, BuildEffectBo
         local fraction = unitBeingBuilt:GetFractionComplete()
         local scale
         while not unitBeingBuilt.Dead and fraction < 1 and not IsDestroyed(slider) do
-            scale = 1 - math.pow(fraction, 2)
+            scale = 1 - MathPow(fraction, 2)
             BuildBaseEffect:SetScale(sx * scale, 1.5 * sy * scale, sz * scale)
             slider:SetGoal(0, 0.5 * (fraction * sy - sy), 0)
             WaitSeconds(0.1)
@@ -1044,7 +1049,7 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
         if numAdjSkirtsOnUnitSkirt > 1 or numUnitSkirtsOnAdjSkirt < 1 then
             local uSkirtLen = (unitSkirtBounds[4] - unitSkirtBounds[2]) * 0.5           -- Unit skirt length
             local uGridUnitSize = (uBpSizeX * 2) / uSkirtLen                            -- Determine one grid of adjacency along that length
-            local xoffset = math.abs(unitSkirtBounds[2] - adjacentSkirtBounds[2]) * 0.5 -- Get offset of the unit along the skirt
+            local xoffset = MathAbs(unitSkirtBounds[2] - adjacentSkirtBounds[2]) * 0.5 -- Get offset of the unit along the skirt
             unitHub.pos[1] = (unitHub.pos[1] - uBpSizeX) + (xoffset * uGridUnitSize) + (uGridUnitSize * 0.5) -- Now offset the position of adjacent point
         end
 
@@ -1052,7 +1057,7 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
         if numUnitSkirtsOnAdjSkirt > 1  or numAdjSkirtsOnUnitSkirt < 1 then
             local aSkirtLen = (adjacentSkirtBounds[4] - adjacentSkirtBounds[2]) * 0.5   -- Adjacent unit skirt length
             local aGridUnitSize = (aBpSizeX * 2) / aSkirtLen                            -- Determine one grid of adjacency along that length ??
-            local xoffset = math.abs(adjacentSkirtBounds[2] - unitSkirtBounds[2]) * 0.5    -- Get offset of the unit along the adjacent unit
+            local xoffset = MathAbs(adjacentSkirtBounds[2] - unitSkirtBounds[2]) * 0.5    -- Get offset of the unit along the adjacent unit
             adjacentHub.pos[1] = (adjacentHub.pos[1] - aBpSizeX) + (xoffset * aGridUnitSize) + (aGridUnitSize * 0.5) -- Now offset the position of adjacent point
         end
 
@@ -1081,7 +1086,7 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
         if numAdjSkirtsOnUnitSkirt > 1 or numUnitSkirtsOnAdjSkirt < 1 then
             local uSkirtLen = (unitSkirtBounds[3] - unitSkirtBounds[1]) * 0.5           -- Unit skirt length
             local uGridUnitSize = (uBpSizeZ * 2) / uSkirtLen                            -- Determine one grid of adjacency along that length
-            local zoffset = math.abs(unitSkirtBounds[1] - adjacentSkirtBounds[1]) * 0.5 -- Get offset of the unit along the skirt
+            local zoffset = MathAbs(unitSkirtBounds[1] - adjacentSkirtBounds[1]) * 0.5 -- Get offset of the unit along the skirt
             unitHub.pos[3] = (unitHub.pos[3] - uBpSizeZ) + (zoffset * uGridUnitSize) + (uGridUnitSize * 0.5) -- Now offset the position of adjacent point
         end
 
@@ -1089,7 +1094,7 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
         if numUnitSkirtsOnAdjSkirt > 1 or numAdjSkirtsOnUnitSkirt < 1 then
             local aSkirtLen = (adjacentSkirtBounds[3] - adjacentSkirtBounds[1]) * 0.5   -- Adjacent unit skirt length
             local aGridUnitSize = (aBpSizeZ * 2) / aSkirtLen                            -- Determine one grid of adjacency along that length ??
-            local zoffset = math.abs(adjacentSkirtBounds[1] - unitSkirtBounds[1]) * 0.5    -- Get offset of the unit along the adjacent unit
+            local zoffset = MathAbs(adjacentSkirtBounds[1] - unitSkirtBounds[1]) * 0.5    -- Get offset of the unit along the adjacent unit
             adjacentHub.pos[3] = (adjacentHub.pos[3] - aBpSizeZ) + (zoffset * aGridUnitSize) + (aGridUnitSize * 0.5) -- Now offset the position of adjacent point
         end
     end
@@ -1644,7 +1649,7 @@ function TeleportCreateCybranSphere(unit, location, initialScale)
     local scale = 1
 
     local sx, sy, sz = TeleportGetUnitSizes(unit)
-    local scale = 1.25 * math.max(sx, math.max(sy, sz))
+    local scale = 1.25 * MathMax(sx, MathMax(sy, sz))
     unit.TeleportCybranSphereScale = scale
 
     local sphere = Entity()
@@ -1666,13 +1671,13 @@ function TeleportChargingProgress(unit, fraction)
     local bp = unit:GetBlueprint()
 
     if bp.Display.TeleportEffects.PlayChargeFxAtDestination ~= false then
-        fraction = math.min(math.max(fraction, 0.01), 1)
+        fraction = MathMin(MathMax(fraction, 0.01), 1)
         local faction = bp.General.FactionName
 
         if faction == 'UEF' then
             -- Increase rotation of effects as progressing
             if unit.TeleportDestChargeBag then
-                local scale = 0.75 + (0.5 * math.max(fraction, 0.01))
+                local scale = 0.75 + (0.5 * MathMax(fraction, 0.01))
                 for _, fx in unit.TeleportDestChargeBag do
                     fx:SetEmitterCurveParam('ROTATION_RATE_CURVE', -(25 + (100 * fraction)), (30 * fraction))
                     fx:ScaleEmitter(scale)
@@ -1686,7 +1691,7 @@ function TeleportChargingProgress(unit, fraction)
             end
         elseif faction == 'Cybran' then
             -- Increase size of sphere and effects as progressing
-            local scale = math.max(fraction, 0.01) * (unit.TeleportCybranSphereScale or 5)
+            local scale = MathMax(fraction, 0.01) * (unit.TeleportCybranSphereScale or 5)
             if unit.TeleportCybranSphere then
                 unit.TeleportCybranSphere:SetDrawScale(scale)
             end
@@ -1698,7 +1703,7 @@ function TeleportChargingProgress(unit, fraction)
         elseif unit.TeleportDestChargeBag then
             -- Increase size of effects as progressing
 
-            local scale = (2 * fraction) - math.pow(fraction, 2)
+            local scale = (2 * fraction) - MathPow(fraction, 2)
             for _, fx in unit.TeleportDestChargeBag do
                fx:ScaleEmitter(scale)
             end
