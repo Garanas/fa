@@ -1,4 +1,15 @@
 
+-- core findings:
+-- GetPositionLocal16: 0.25212
+-- GetPositionUpvalue16: 0.25020
+-- GetPositionSelf16: 0.27827
+
+-- Using the self version of a function is the slowest approach. Having it as an upvalue 
+-- (and manually adding in the self) has a significant difference: a 10% improvement.
+-- Especially because we didn't change anything but redirecting the call. Localizing the 
+-- function in the function itself is less useful - the overhead of adding the local
+-- to the stack and releasing it costs too much.
+
 -- ran by: (Jip) Willem Wijnia
 -- hardware: AMD Ryzen 3600 6-core
 -- time: 0.01842

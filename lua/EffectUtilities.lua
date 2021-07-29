@@ -16,6 +16,7 @@ local RandomFloat = Utils.GetRandomFloat
 
 -- often used globals
 local Warp = Warp
+local Vector = Vector
 local Random = Random 
 local WaitSeconds = WaitSeconds
 local CreateEmitterAtEntity = CreateEmitterAtEntity
@@ -29,8 +30,9 @@ local MathMax = math.max
 local MathAbs = math.abs 
 local MathPow = math.pow
 
--- often used class functions
+-- often used metatable functions
 local GetPosition = moho.entity_methods.GetPosition
+local GetPositionXYZ = moho.entity_methods.GetPositionXYZ
 local SetVelocity = moho.entity_methods.SetVelocity
 
 local GetFractionComplete = moho.unit_methods.GetFractionComplete
@@ -177,7 +179,7 @@ function CreateBuildCubeThread(unitBeingBuilt, builder, OnBeingBuiltEffectsBag)
     unitBeingBuilt.BuildingCube = true
     local bp = unitBeingBuilt.Blueprint
     local mul = 1.15
-    local xPos, yPos, zPos = unitBeingBuilt:GetPositionXYZ()
+    local xPos, yPos, zPos = GetPositionXYZ(unitBeingBuilt)
     local proj = nil
     yPos = yPos + (bp.Physics.MeshExtentsOffsetY or 0)
 
@@ -214,7 +216,7 @@ function CreateBuildCubeThread(unitBeingBuilt, builder, OnBeingBuiltEffectsBag)
     unitBeingBuilt:HideLandBones()
     unitBeingBuilt.BeingBuiltShowBoneTriggered = true
 
-    local lComplete = unitBeingBuilt:GetFractionComplete()
+    local lComplete = GetFractionComplete(unitBeingBuilt)
     WaitSeconds(0.2)
 
     if unitBeingBuilt.Dead then
@@ -224,7 +226,7 @@ function CreateBuildCubeThread(unitBeingBuilt, builder, OnBeingBuiltEffectsBag)
     -- Create glow slice cuts and resize base cube
     local slice = nil
     local SlicePeriod = 1.1
-    local cComplete = unitBeingBuilt:GetFractionComplete()
+    local cComplete = GetFractionComplete(unitBeingBuilt)
     while not unitBeingBuilt.Dead and  cComplete < 1.0 do
         if lComplete < cComplete and not BuildBaseEffect:BeenDestroyed() then
             proj = BuildBaseEffect:CreateProjectile('/effects/Entities/UEFBuildEffect/UEFBuildEffect02_proj.bp', 0, y * (1 - cComplete), 0, nil, nil, nil)
@@ -239,7 +241,7 @@ function CreateBuildCubeThread(unitBeingBuilt, builder, OnBeingBuiltEffectsBag)
             break
         end
         lComplete = cComplete
-        cComplete = unitBeingBuilt:GetFractionComplete()
+        cComplete = GetFractionComplete(unitBeingBuilt)
     end
     unitBeingBuilt.BuildingCube = nil
 end
@@ -296,7 +298,7 @@ function CreateUEFBuildSliceBeams(builder, unitBeingBuilt, BuildEffectBones, Bui
     local velY = 2 * (endVec2.y - endVec1.y)
     local velZ = 2 * (endVec2.z - endVec1.z)
 
-    if unitBeingBuilt:GetFractionComplete() == 0 then
+    if GetFractionComplete(unitBeingBuilt) == 0 then
         Warp(BeamEndEntity, Vector((cx1 + cx2) * 0.5, ((cy1 + cy2) * 0.5) - oy, (cz1 + cz2) * 0.5))
         WaitSeconds(0.7)
     end
@@ -306,11 +308,11 @@ function CreateUEFBuildSliceBeams(builder, unitBeingBuilt, BuildEffectBones, Bui
     -- Warp our projectile back to the initial corner and lower based on build completeness
     while not builder:BeenDestroyed() and not unitBeingBuilt:BeenDestroyed() do
         if flipDirection then
-            Warp(BeamEndEntity, Vector(cx1, (cy1 - (oy * unitBeingBuilt:GetFractionComplete())), cz1))
+            Warp(BeamEndEntity, Vector(cx1, (cy1 - (oy * GetFractionComplete(unitBeingBuilt))), cz1))
             BeamEndEntity:SetVelocity(velX, velY, velZ)
             flipDirection = false
         else
-            Warp(BeamEndEntity, Vector(cx2, (cy2 - (oy * unitBeingBuilt:GetFractionComplete())), cz2))
+            Warp(BeamEndEntity, Vector(cx2, (cy2 - (oy * GetFractionComplete(unitBeingBuilt))), cz2))
             BeamEndEntity:SetVelocity(-velX, -velY, -velZ)
             flipDirection = true
         end
@@ -368,7 +370,7 @@ function CreateUEFCommanderBuildSliceBeams(builder, unitBeingBuilt, BuildEffectB
     local velY = 2 * (endVec2.y - endVec1.y)
     local velZ = 2 * (endVec2.z - endVec1.z)
 
-    if unitBeingBuilt:GetFractionComplete() == 0 then
+    if GetFractionComplete(unitBeingBuilt) == 0 then
         Warp(BeamEndEntity, Vector(cx1, cy1 - oy, cz1))
         Warp(BeamEndEntity2, Vector(cx2, cy2 - oy, cz2))
         WaitSeconds(0.7)
@@ -379,15 +381,15 @@ function CreateUEFCommanderBuildSliceBeams(builder, unitBeingBuilt, BuildEffectB
     -- Warp our projectile back to the initial corner and lower based on build completeness
     while not builder:BeenDestroyed() and not unitBeingBuilt:BeenDestroyed() do
         if flipDirection then
-            Warp(BeamEndEntity, Vector(cx1, (cy1 - (oy * unitBeingBuilt:GetFractionComplete())), cz1))
+            Warp(BeamEndEntity, Vector(cx1, (cy1 - (oy * GetFractionComplete(unitBeingBuilt))), cz1))
             BeamEndEntity:SetVelocity(velX, velY, velZ)
-            Warp(BeamEndEntity2, Vector(cx2, (cy2 - (oy * unitBeingBuilt:GetFractionComplete())), cz2))
+            Warp(BeamEndEntity2, Vector(cx2, (cy2 - (oy * GetFractionComplete(unitBeingBuilt))), cz2))
             BeamEndEntity2:SetVelocity(-velX, -velY, -velZ)
             flipDirection = false
         else
-            Warp(BeamEndEntity, Vector(cx2, (cy2 - (oy * unitBeingBuilt:GetFractionComplete())), cz2))
+            Warp(BeamEndEntity, Vector(cx2, (cy2 - (oy * GetFractionComplete(unitBeingBuilt))), cz2))
             BeamEndEntity:SetVelocity(-velX, -velY, -velZ)
-            Warp(BeamEndEntity2, Vector(cx1, (cy1 - (oy * unitBeingBuilt:GetFractionComplete())), cz1))
+            Warp(BeamEndEntity2, Vector(cx1, (cy1 - (oy * GetFractionComplete(unitBeingBuilt))), cz1))
             BeamEndEntity2:SetVelocity(velX, velY, velZ)
             flipDirection = true
         end
@@ -426,7 +428,7 @@ end
 
 function CreateAeonBuildBaseThread(unitBeingBuilt, builder, EffectsBag)
     local bp = unitBeingBuilt.Blueprint
-    local x, y, z = unitBeingBuilt:GetPositionXYZ()
+    local x, y, z = GetPositionXYZ(unitBeingBuilt)
     local mul = 0.5
     local sx = bp.Physics.MeshExtentsX or bp.Footprint.SizeX * mul
     local sz = bp.Physics.MeshExtentsZ or bp.Footprint.SizeZ * mul
@@ -455,13 +457,13 @@ function CreateAeonBuildBaseThread(unitBeingBuilt, builder, EffectsBag)
     slider:SetGoal(0, -sy, 0)
     slider:SetSpeed(-1)
 
-    local fraction = unitBeingBuilt:GetFractionComplete()
+    local fraction = GetFractionComplete(unitBeingBuilt)
     while not unitBeingBuilt.Dead and fraction < 1 do
         scale = 1.2 - MathPow(fraction, 4)
         BuildBaseEffect:SetScale(sx * scale, 1.5 * sy * scale, sz * scale)
         slider:SetGoal(0, (fraction * sy - sy), 0)
         WaitSeconds(0.1)
-        fraction = unitBeingBuilt:GetFractionComplete()
+        fraction = GetFractionComplete(unitBeingBuilt)
     end
 
     slider:Destroy()
@@ -490,7 +492,7 @@ function CreateCybranBuildBeams(builder, unitBeingBuilt, BuildEffectBones, Build
         WaitSeconds(0.2)
 
         -- find a location and warp the beam
-        local ox, oy, oz = unitBeingBuilt:GetPositionXYZ()
+        local ox, oy, oz = GetPositionXYZ(unitBeingBuilt)
         Warp(beamEnd, Vector(ox, oy, oz))
 
         -- attach emitters
@@ -537,7 +539,7 @@ function SpawnBuildBots(builder, unitBeingBuilt, BuildEffectsBag)
     -- If is new, won't spawn build bots if they might accidentally capture the unit
     if unitBeingBuiltArmy and ( builder.Army == unitBeingBuiltArmy or IsHumanUnit(unitBeingBuilt) ) then
 
-        local x, y, z = builder:GetPositionXYZ()
+        local x, y, z = GetPositionXYZ(builder)
         local q = builder:GetOrientation()
 
         -- iterate over the build bots
@@ -614,7 +616,7 @@ function CreateCybranFactoryBuildEffects(builder, unitBeingBuilt, BuildBones, Bu
 
     -- Add sparks to the collision box of the unit being built
     local sx, sy, sz = 0
-    while not unitBeingBuilt.Dead and unitBeingBuilt:GetFractionComplete() < 1 do
+    while not unitBeingBuilt.Dead and GetFractionComplete(unitBeingBuilt) < 1 do
         sx, sy, sz = unitBeingBuilt:GetRandomOffset(1)
         for _, vE in UnitBuildEffects do
             CreateEmitterOnEntity(unitBeingBuilt, builder.Army, vE):OffsetEmitter(sx, sy, sz)
@@ -665,7 +667,7 @@ function CreateAeonFactoryBuildingEffects(builder, unitBeingBuilt, BuildEffectBo
     -- Create a pool mercury that slow draws into the build unit
     local BuildBaseEffect = unitBeingBuilt:CreateProjectile('/effects/entities/AeonBuildEffect/AeonBuildEffect01_proj.bp', 0, 0, 1, nil, nil, nil)
     if builder:IsPaused() then
-        local fraction = unitBeingBuilt:GetFractionComplete()
+        local fraction = GetFractionComplete(unitBeingBuilt)
         local scale = 1 - MathPow(fraction, 2)
         BuildBaseEffect:SetScale(sx * scale, 1.5 * sy * scale, sz * scale)
     else
@@ -697,7 +699,7 @@ function CreateAeonFactoryBuildingEffects(builder, unitBeingBuilt, BuildEffectBo
     EffectsBag:Add(slider)
     slider:SetWorldUnits(true)
     if builder:IsPaused() then
-        local fraction = unitBeingBuilt:GetFractionComplete()
+        local fraction = GetFractionComplete(unitBeingBuilt)
         slider:SetSpeed(0)
         slider:SetGoal(0, 0.5 * (fraction * sy - sy), 0)
     else
@@ -706,14 +708,14 @@ function CreateAeonFactoryBuildingEffects(builder, unitBeingBuilt, BuildEffectBo
     end
 
     if not builder:IsPaused() then
-        local fraction = unitBeingBuilt:GetFractionComplete()
+        local fraction = GetFractionComplete(unitBeingBuilt)
         local scale
         while not unitBeingBuilt.Dead and fraction < 1 and not IsDestroyed(slider) do
             scale = 1 - MathPow(fraction, 2)
             BuildBaseEffect:SetScale(sx * scale, 1.5 * sy * scale, sz * scale)
             slider:SetGoal(0, 0.5 * (fraction * sy - sy), 0)
             WaitSeconds(0.1)
-            fraction = unitBeingBuilt:GetFractionComplete()
+            fraction = GetFractionComplete(unitBeingBuilt)
         end
 
         slider:Destroy()
@@ -738,7 +740,7 @@ function CreateSeraphimFactoryBuildingEffectsUnPause(builder, unitBeingBuilt, Bu
     local mul = 1
     local sx = bp.Physics.MeshExtentsX or bp.Footprint.SizeX * mul
     local sz = bp.Physics.MeshExtentsZ or bp.Footprint.SizeZ * mul
-    local sy = (1 - unitBeingBuilt:GetFractionComplete()) * bp.Physics.MeshExtentsY or (1 - unitBeingBuilt:GetFractionComplete()) * sx + sz
+    local sy = (1 - GetFractionComplete(unitBeingBuilt)) * bp.Physics.MeshExtentsY or (1 - GetFractionComplete(unitBeingBuilt)) * sx + sz
 
     local slice = nil
 
@@ -775,7 +777,7 @@ function CreateSeraphimFactoryBuildingEffectsUnPause(builder, unitBeingBuilt, Bu
     end
 
     -- Wait till we are 80% done building, then snap our slider to
-    while not unitBeingBuilt.Dead and unitBeingBuilt:GetFractionComplete() < 0.8 do
+    while not unitBeingBuilt.Dead and GetFractionComplete(unitBeingBuilt) < 0.8 do
         WaitSeconds(0.5)
     end
 
@@ -801,7 +803,7 @@ function CreateSeraphimFactoryBuildingEffects(builder, unitBeingBuilt, BuildEffe
     local sx = bp.Physics.MeshExtentsX or bp.Footprint.SizeX * mul
     local sz = bp.Physics.MeshExtentsZ or bp.Footprint.SizeZ * mul
     local sy = bp.Physics.MeshExtentsY or sx + sz
-    local sy_pause = (1 - unitBeingBuilt:GetFractionComplete()) * bp.Physics.MeshExtentsY or (1 - unitBeingBuilt:GetFractionComplete()) * sx + sz
+    local sy_pause = (1 - GetFractionComplete(unitBeingBuilt)) * bp.Physics.MeshExtentsY or (1 - GetFractionComplete(unitBeingBuilt)) * sx + sz
 
     local slice = nil
 
@@ -844,7 +846,7 @@ function CreateSeraphimFactoryBuildingEffects(builder, unitBeingBuilt, BuildEffe
         end
 
         -- Wait till we are 80% done building, then snap our slider to
-        while not unitBeingBuilt.Dead and unitBeingBuilt:GetFractionComplete() < 0.8 do
+        while not unitBeingBuilt.Dead and GetFractionComplete(unitBeingBuilt) < 0.8 do
             WaitSeconds(0.5)
         end
 
@@ -912,11 +914,11 @@ function CreateSeraphimBuildThread(unitBeingBuilt, builder, EffectsBag, scaleFac
     end
 
     -- Poll the unit being built every 0.5 a second to adjust the effects to match
-    local fractionComplete = unitBeingBuilt:GetFractionComplete()
+    local fractionComplete = GetFractionComplete(unitBeingBuilt)
     local unitScaleMetric = unitBeingBuilt:GetFootPrintSize() * 0.65
     while not unitBeingBuilt.Dead and fractionComplete < 1.0 do
         WaitSeconds(0.5)
-        fractionComplete = unitBeingBuilt:GetFractionComplete()
+        fractionComplete = GetFractionComplete(unitBeingBuilt)
         for _, vEffect in AdjustedEmitters do
             vEffect:ScaleEmitter(scaleFactor + (unitScaleMetric * fractionComplete))
         end
