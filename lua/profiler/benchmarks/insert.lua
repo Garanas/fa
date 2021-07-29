@@ -62,43 +62,43 @@ end
 -- hardware: AMD Ryzen 3600 6-core
 -- time: 34.751953125
 
-function AddGetnGlobal()
+-- function AddGetnGlobal()
 
-    local start = GetSystemTimeSecondsOnlyForProfileUse()
+--     local start = GetSystemTimeSecondsOnlyForProfileUse()
 
-    local TableGetn = table.getn
+--     local TableGetn = table.getn
 
-    local a = { }
-    for k = 1, 100000 do
-        a[table.getn(a) + 1] = k 
-    end
+--     local a = { }
+--     for k = 1, 100000 do
+--         a[table.getn(a) + 1] = k 
+--     end
 
-    local final = GetSystemTimeSecondsOnlyForProfileUse()
+--     local final = GetSystemTimeSecondsOnlyForProfileUse()
 
-    return final - start
+--     return final - start
 
-end
+-- end
 
--- ran by: (Jip) Willem Wijnia
--- hardware: AMD Ryzen 3600 6-core
--- time: 34.69970703125
+-- -- ran by: (Jip) Willem Wijnia
+-- -- hardware: AMD Ryzen 3600 6-core
+-- -- time: 34.69970703125
 
-function AddGetnLocal()
+-- function AddGetnLocal()
 
-    local start = GetSystemTimeSecondsOnlyForProfileUse()
+--     local start = GetSystemTimeSecondsOnlyForProfileUse()
 
-    local TableGetn = table.getn
+--     local TableGetn = table.getn
 
-    local a = { }
-    for k = 1, 100000 do
-        a[TableGetn(a) + 1] = k 
-    end
+--     local a = { }
+--     for k = 1, 100000 do
+--         a[TableGetn(a) + 1] = k 
+--     end
 
-    local final = GetSystemTimeSecondsOnlyForProfileUse()
+--     local final = GetSystemTimeSecondsOnlyForProfileUse()
 
-    return final - start
+--     return final - start
 
-end
+-- end
 
 -- ran by: (Jip) Willem Wijnia
 -- hardware: AMD Ryzen 3600 6-core

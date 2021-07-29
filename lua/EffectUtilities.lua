@@ -5,25 +5,39 @@
 -- Copyright © 2006 Gas Powered Games, Inc.  All rights reserved.
 -----------------------------------------------------------------
 
-local util = import('utilities.lua')
+local Utils = import('utilities.lua')
 local Entity = import('/lua/sim/Entity.lua').Entity
 local EffectTemplate = import('/lua/EffectTemplates.lua')
-local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
 
--- localize to upvalues instead of globals
+-- upvalues instead of globals
 
+-- often used imports
+local RandomFloat = Utils.GetRandomFloat
+
+-- often used globals
+local Warp = Warp
+local Random = Random 
+local WaitSeconds = WaitSeconds
 local CreateEmitterAtEntity = CreateEmitterAtEntity
 local CreateEmitterOnEntity = CreateEmitterOnEntity
 local CreateEmitterAtBone = CreateEmitterAtBone
 
-local Warp = Warp
-local Random = Random 
-
-local MathCeil = MathCeil 
+-- often used math functions
+local MathCeil = math.ceil 
 local MathMin = math.min 
 local MathMax = math.max 
 local MathAbs = math.abs 
 local MathPow = math.pow
+
+-- often used class functions
+local GetPosition = moho.entity_methods.GetPosition
+local SetVelocity = moho.entity_methods.SetVelocity
+
+local GetFractionComplete = moho.unit_methods.GetFractionComplete
+
+local OffsetEmitter = moho.IEffect.OffsetEmitter
+local ScaleEmitter = moho.IEffect.ScaleEmitter
+local SetEmitterParam = moho.IEffect.SetEmitterParam
 
 function CreateEffects(obj, army, EffectTable)
 
@@ -49,7 +63,7 @@ function CreateEffectsWithOffset(obj, army, EffectTable, x, y, z)
     -- populate it
     for _, v in EffectTable  do
         n = n + 1
-        emitters[n] = CreateEmitterAtEntity(obj, army, v):OffsetEmitter(x, y, z)
+        emitters[n] = OffsetEmitter(CreateEmitterAtEntity(obj, army, v), x, y, z)
     end
 
     -- return both table and the number of elements
@@ -63,7 +77,7 @@ function CreateEffectsWithRandomOffset(obj, army, EffectTable, xRange, yRange, z
 
     -- populate it
     for _, v in EffectTable do
-        emitters[n] = CreateEmitterOnEntity(obj, army, v):OffsetEmitter(util.GetRandomOffset(xRange, yRange, zRange, 1))
+        emitters[n] = OffsetEmitter(CreateEmitterOnEntity(obj, army, v), Utils.GetRandomOffset(xRange, yRange, zRange, 1))
         n = n + 1
     end
 
@@ -94,7 +108,7 @@ function CreateBoneEffectsOffset(obj, bone, army, EffectTable, x, y, z)
     -- populate it
     for _, v in EffectTable do
         n = n + 1
-        emitters[n] = CreateEmitterAtBone(obj, bone, army, v):OffsetEmitter(x, y, z)
+        emitters[n] = OffsetEmitter(CreateEmitterAtBone(obj, bone, army, v), x, y, z)
     end
 
     -- return both table and the number of elements
@@ -127,7 +141,7 @@ function CreateBoneTableRangedScaleEffects(obj, BoneTable, EffectTable, army, Sc
     for _, vBone in BoneTable do
         for _, vEffect in EffectTable do
             n = n + 1
-            emitters[n] = CreateEmitterAtBone(obj, vBone, army, vEffect):ScaleEmitter(util.GetRandomFloat(ScaleMin, ScaleMax))
+            emitters[n] = ScaleEmitter(CreateEmitterAtBone(obj, vBone, army, vEffect), RandomFloat(ScaleMin, ScaleMax))
         end
     end
 
@@ -144,7 +158,7 @@ function CreateRandomEffects(obj, army, EffectTable, NumEffects)
 
     -- populate it
     for i = 1, NumEffects do
-        local ri = util.GetRandomInt(1, NumTableEntries)
+        local ri = Utils.GetRandomInt(1, NumTableEntries)
         emitters[i] = CreateEmitterOnEntity(obj, army, EffectTable[ri])
     end
     
@@ -153,14 +167,15 @@ function CreateRandomEffects(obj, army, EffectTable, NumEffects)
 end
 
 function ScaleEmittersParam(Emitters, param, minRange, maxRange)
+    local diff = maxRange - minRange
     for _, v in Emitters do
-        v:SetEmitterParam(param, util.GetRandomFloat(minRange, maxRange))
+        SetEmitterParam(v, param, minRange + diff * Random())
     end
 end
 
 function CreateBuildCubeThread(unitBeingBuilt, builder, OnBeingBuiltEffectsBag)
     unitBeingBuilt.BuildingCube = true
-    local bp = unitBeingBuilt:GetBlueprint()
+    local bp = unitBeingBuilt.Blueprint
     local mul = 1.15
     local xPos, yPos, zPos = unitBeingBuilt:GetPositionXYZ()
     local proj = nil
@@ -230,14 +245,14 @@ function CreateBuildCubeThread(unitBeingBuilt, builder, OnBeingBuiltEffectsBag)
 end
 
 function CreateUEFUnitBeingBuiltEffects(builder, unitBeingBuilt, BuildEffectsBag)
-    local buildAttachBone = builder:GetBlueprint().Display.BuildAttachBone
+    local buildAttachBone = builder.Blueprint.Display.BuildAttachBone
     BuildEffectsBag:Add(CreateAttachedEmitter(builder, buildAttachBone, builder.Army, '/effects/emitters/uef_mobile_unit_build_01_emit.bp'))
 end
 
 function CreateUEFBuildSliceBeams(builder, unitBeingBuilt, BuildEffectBones, BuildEffectsBag)
     local BeamBuildEmtBp = '/effects/emitters/build_beam_01_emit.bp'
-    local buildbp = unitBeingBuilt:GetBlueprint()
-    local x, y, z = unpack(unitBeingBuilt:GetPosition())
+    local buildbp = unitBeingBuilt.Blueprint
+    local x, y, z = unpack(GetPosition(unitBeingBuilt))
     y = y + (buildbp.Physics.MeshExtentsOffsetY or 0)
 
     -- Create a projectile for the end of build effect and warp it to the unit
@@ -264,7 +279,7 @@ function CreateUEFBuildSliceBeams(builder, unitBeingBuilt, BuildEffectBones, Bui
 
     -- Determine the the 2 closest edges of the build cube and use those for the location of our laser
     local VectorExtentsList = { Vector(x + ox, y + oy, z + oz), Vector(x + ox, y + oy, z - oz), Vector(x - ox, y + oy, z + oz), Vector(x - ox, y + oy, z - oz) }
-    local endVec1 = util.GetClosestVector(builder:GetPosition(), VectorExtentsList)
+    local endVec1 = Utils.GetClosestVector(GetPosition(builder), VectorExtentsList)
 
     for k, v in VectorExtentsList do
         if v == endVec1 then
@@ -272,7 +287,7 @@ function CreateUEFBuildSliceBeams(builder, unitBeingBuilt, BuildEffectBones, Bui
         end
     end
 
-    local endVec2 = util.GetClosestVector(builder:GetPosition(), VectorExtentsList)
+    local endVec2 = Utils.GetClosestVector(GetPosition(builder), VectorExtentsList)
     local cx1, cy1, cz1 = unpack(endVec1)
     local cx2, cy2, cz2 = unpack(endVec2)
 
@@ -305,8 +320,8 @@ end
 
 function CreateUEFCommanderBuildSliceBeams(builder, unitBeingBuilt, BuildEffectBones, BuildEffectsBag)
     local BeamBuildEmtBp = '/effects/emitters/build_beam_01_emit.bp'
-    local buildbp = unitBeingBuilt:GetBlueprint()
-    local x, y, z = unpack(unitBeingBuilt:GetPosition())
+    local buildbp = unitBeingBuilt.Blueprint
+    local x, y, z = unpack(GetPosition(unitBeingBuilt))
     y = y + (buildbp.Physics.MeshExtentsOffsetY or 0)
 
     -- Create a projectile for the end of build effect and warp it to the unit
@@ -336,7 +351,7 @@ function CreateUEFCommanderBuildSliceBeams(builder, unitBeingBuilt, BuildEffectB
 
     -- Determine the the 2 closest edges of the build cube and use those for the location of our laser
     local VectorExtentsList = { Vector(x + ox, y + oy, z + oz), Vector(x + ox, y + oy, z - oz), Vector(x - ox, y + oy, z + oz), Vector(x - ox, y + oy, z - oz) }
-    local endVec1 = util.GetClosestVector(builder:GetPosition(), VectorExtentsList)
+    local endVec1 = Utils.GetClosestVector(GetPosition(builder), VectorExtentsList)
 
     for k, v in VectorExtentsList do
         if v == endVec1 then
@@ -344,7 +359,7 @@ function CreateUEFCommanderBuildSliceBeams(builder, unitBeingBuilt, BuildEffectB
         end
     end
 
-    local endVec2 = util.GetClosestVector(builder:GetPosition(), VectorExtentsList)
+    local endVec2 = Utils.GetClosestVector(GetPosition(builder), VectorExtentsList)
     local cx1, cy1, cz1 = unpack(endVec1)
     local cx2, cy2, cz2 = unpack(endVec2)
 
@@ -382,7 +397,7 @@ end
 
 function CreateDefaultBuildBeams(builder, unitBeingBuilt, BuildEffectBones, BuildEffectsBag)
     local BeamBuildEmtBp = '/effects/emitters/build_beam_01_emit.bp'
-    local ox, oy, oz = unpack(unitBeingBuilt:GetPosition())
+    local ox, oy, oz = unpack(GetPosition(unitBeingBuilt))
     local BeamEndEntity = Entity()
     BuildEffectsBag:Add(BeamEndEntity)
     Warp(BeamEndEntity, Vector(ox, oy, oz))
@@ -400,7 +415,7 @@ function CreateDefaultBuildBeams(builder, unitBeingBuilt, BuildEffectBones, Buil
     end
 
     CreateEmitterOnEntity(BeamEndEntity, builder.Army, '/effects/emitters/sparks_08_emit.bp')
-    local waitTime = util.GetRandomFloat(0.3, 1.5)
+    local waitTime = RandomFloat(0.3, 1.5)
 
     while not builder:BeenDestroyed() and not unitBeingBuilt:BeenDestroyed() do
         local x, y, z = builder.GetRandomOffset(unitBeingBuilt, 1)
@@ -410,7 +425,7 @@ function CreateDefaultBuildBeams(builder, unitBeingBuilt, BuildEffectBones, Buil
 end
 
 function CreateAeonBuildBaseThread(unitBeingBuilt, builder, EffectsBag)
-    local bp = unitBeingBuilt:GetBlueprint()
+    local bp = unitBeingBuilt.Blueprint
     local x, y, z = unitBeingBuilt:GetPositionXYZ()
     local mul = 0.5
     local sx = bp.Physics.MeshExtentsX or bp.Footprint.SizeX * mul
@@ -558,7 +573,7 @@ function CreateCybranEngineerBuildEffects(builder, BuildBones, BuildBots, BuildE
             for _, vEffect in  EffectTemplate.CybranBuildUnitBlink01 do
                 BuildEffectsBag:Add(CreateAttachedEmitter(builder, vBone, builder.Army, vEffect))
             end
-            WaitSeconds(util.GetRandomFloat(0.2, 1))
+            WaitSeconds(RandomFloat(0.2, 1))
         end
 
         if builder:BeenDestroyed() then
@@ -604,7 +619,7 @@ function CreateCybranFactoryBuildEffects(builder, unitBeingBuilt, BuildBones, Bu
         for _, vE in UnitBuildEffects do
             CreateEmitterOnEntity(unitBeingBuilt, builder.Army, vE):OffsetEmitter(sx, sy, sz)
         end
-        WaitSeconds(util.GetRandomFloat(0.1, 0.6))
+        WaitSeconds(RandomFloat(0.1, 0.6))
     end
 end
 
@@ -613,7 +628,7 @@ function CreateAeonConstructionUnitBuildingEffects(builder, unitBeingBuilt, Buil
 
     local beamEnd = Entity()
     BuildEffectsBag:Add(beamEnd)
-    Warp(beamEnd, unitBeingBuilt:GetPosition())
+    Warp(beamEnd, GetPosition(unitBeingBuilt))
 
     for _, v in EffectTemplate.AeonBuildBeams01 do
         local beamEffect = AttachBeamEntityToEntity(builder, 0, beamEnd, -1, builder.Army, v)
@@ -625,7 +640,7 @@ end
 function CreateAeonCommanderBuildingEffects(builder, unitBeingBuilt, BuildEffectBones, BuildEffectsBag)
     local beamEnd = Entity()
     BuildEffectsBag:Add(beamEnd)
-    Warp(beamEnd, unitBeingBuilt:GetPosition())
+    Warp(beamEnd, GetPosition(unitBeingBuilt))
 
     for _, vBone in BuildEffectBones do
         BuildEffectsBag:Add(CreateAttachedEmitter(builder, vBone, builder.Army, '/effects/emitters/aeon_build_02_emit.bp'))
@@ -638,7 +653,7 @@ function CreateAeonCommanderBuildingEffects(builder, unitBeingBuilt, BuildEffect
 end
 
 function CreateAeonFactoryBuildingEffects(builder, unitBeingBuilt, BuildEffectBones, BuildBone, EffectsBag)
-    local bp = unitBeingBuilt:GetBlueprint()
+    local bp = unitBeingBuilt.Blueprint
     local x, y, z = unpack(builder:GetPosition(BuildBone))
     local mul = 1
     local sx = bp.Physics.MeshExtentsX or bp.Footprint.SizeX * mul
@@ -718,7 +733,7 @@ function CreateSeraphimUnitEngineerBuildingEffects(builder, unitBeingBuilt, Buil
 end
 
 function CreateSeraphimFactoryBuildingEffectsUnPause(builder, unitBeingBuilt, BuildEffectBones, BuildBone, EffectsBag)
-    local bp = unitBeingBuilt:GetBlueprint()
+    local bp = unitBeingBuilt.Blueprint
     local x, y, z = unpack(builder:GetPosition(BuildBone))
     local mul = 1
     local sx = bp.Physics.MeshExtentsX or bp.Footprint.SizeX * mul
@@ -780,7 +795,7 @@ function CreateSeraphimFactoryBuildingEffectsUnPause(builder, unitBeingBuilt, Bu
 end
 
 function CreateSeraphimFactoryBuildingEffects(builder, unitBeingBuilt, BuildEffectBones, BuildBone, EffectsBag)
-    local bp = unitBeingBuilt:GetBlueprint()
+    local bp = unitBeingBuilt.Blueprint
     local x, y, z = unpack(builder:GetPosition(BuildBone))
     local mul = 1
     local sx = bp.Physics.MeshExtentsX or bp.Footprint.SizeX * mul
@@ -854,8 +869,8 @@ function CreateSeraphimFactoryBuildingEffects(builder, unitBeingBuilt, BuildEffe
 end
 
 function CreateSeraphimBuildThread(unitBeingBuilt, builder, EffectsBag, scaleFactor)
-    local bp = unitBeingBuilt:GetBlueprint()
-    local x, y, z = unpack(unitBeingBuilt:GetPosition())
+    local bp = unitBeingBuilt.Blueprint
+    local x, y, z = unpack(GetPosition(unitBeingBuilt))
     local mul = 0.5
     local sx = bp.Physics.MeshExtentsX or bp.Footprint.SizeX * mul
     local sz = bp.Physics.MeshExtentsZ or bp.Footprint.SizeZ * mul
@@ -929,8 +944,8 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
 
     table.insert(AdjacencyBeamsBag, info)
 
-    local uBp = unit:GetBlueprint()
-    local aBp = adjacentUnit:GetBlueprint()
+    local uBp = unit.Blueprint
+    local aBp = adjacentUnit.Blueprint
     local faction = uBp.General.FactionName
 
     -- Determine which effects we will be using
@@ -942,17 +957,17 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
     local validAdjacency = true
 
 
-    local unitPos = unit:GetPosition()
-    local adjPos = adjacentUnit:GetPosition()
+    local unitPos = GetPosition(unit)
+    local adjPos = GetPosition(adjacentUnit)
 
     -- Create hub start/end and all midpoint nodes
     local unitHub = {
         entity = Entity{},
-        pos = unit:GetPosition(),
+        pos = GetPosition(unit),
     }
     local adjacentHub = {
         entity = Entity{},
-        pos = adjacentUnit:GetPosition(),
+        pos = GetPosition(adjacentUnit),
     }
 
     local spec = {
@@ -961,7 +976,7 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
 
     if faction == 'Aeon' then
         nodeMesh = '/effects/entities/aeonadjacencynode/aeonadjacencynode_mesh'
-        beamEffect = '/effects/emitters/adjacency_aeon_beam_0' .. util.GetRandomInt(1, 3) .. '_emit.bp'
+        beamEffect = '/effects/emitters/adjacency_aeon_beam_0' .. Utils.GetRandomInt(1, 3) .. '_emit.bp'
         numNodes = 3
     elseif faction == 'Cybran' then
         nodeMesh = '/effects/entities/cybranadjacencynode/cybranadjacencynode_mesh'
@@ -972,7 +987,7 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
     elseif faction == 'Seraphim' then
         nodeMesh = '/effects/entities/seraphimadjacencynode/seraphimadjacencynode_mesh'
         table.insert(emitterNodeEffects, EffectTemplate.SAdjacencyAmbient01)
-        if  util.GetDistanceBetweenTwoVectors(unitHub.pos, adjacentHub.pos) < 2.5 then
+        if  Utils.GetDistanceBetweenTwoVectors(unitHub.pos, adjacentHub.pos) < 2.5 then
             numNodes = 1
         else
             numNodes = 3
@@ -1101,13 +1116,13 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
 
     -- Setup our midpoint positions
     if faction == 'Aeon' or faction == 'Seraphim' then
-        local DirectionVec = util.GetDifferenceVector(unitHub.pos, adjacentHub.pos)
-        local Dist = util.GetDistanceBetweenTwoVectors(unitHub.pos, adjacentHub.pos)
-        local PerpVec = util.Cross(DirectionVec, Vector(0, 0.35, 0))
+        local DirectionVec = Utils.GetDifferenceVector(unitHub.pos, adjacentHub.pos)
+        local Dist = Utils.GetDistanceBetweenTwoVectors(unitHub.pos, adjacentHub.pos)
+        local PerpVec = Utils.Cross(DirectionVec, Vector(0, 0.35, 0))
         local segmentLen = 1 / (numNodes + 1)
         local halfDist = Dist * 0.5
 
-        if util.GetRandomInt(0, 1) == 1 then
+        if Utils.GetRandomInt(0, 1) == 1 then
             PerpVec[1] = -PerpVec[1]
             PerpVec[2] = -PerpVec[2]
             PerpVec[3] = -PerpVec[3]
@@ -1132,12 +1147,12 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
         end
     elseif faction == 'Cybran' then
         if unitPos[1] == adjPos[1] or unitPos[3] == adjPos[3] then
-            local Dist = util.GetDistanceBetweenTwoVectors(unitHub.pos, adjacentHub.pos)
-            local DirectionVec = util.GetScaledDirectionVector(unitHub.pos, adjacentHub.pos, util.GetRandomFloat(0.35, Dist * 0.48))
+            local Dist = Utils.GetDistanceBetweenTwoVectors(unitHub.pos, adjacentHub.pos)
+            local DirectionVec = Utils.GetScaledDirectionVector(unitHub.pos, adjacentHub.pos, RandomFloat(0.35, Dist * 0.48))
             DirectionVec[2] = 0
-            local PerpVec = util.Cross(DirectionVec, Vector(0, util.GetRandomFloat(0.2, 0.35), 0))
+            local PerpVec = Utils.Cross(DirectionVec, Vector(0, RandomFloat(0.2, 0.35), 0))
 
-            if util.GetRandomInt(0, 1) == 1 then
+            if Utils.GetRandomInt(0, 1) == 1 then
                 PerpVec[1] = -PerpVec[1]
                 PerpVec[2] = -PerpVec[2]
                 PerpVec[3] = -PerpVec[3]
@@ -1162,21 +1177,21 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
             if unitSkirtBounds[3] == adjacentSkirtBounds[1] then
                 nodeList[1].pos[1] = unitHub.pos[1]
                 nodeList[2].pos[1] = adjacentHub.pos[1]
-                nodeList[1].pos[3] = ((unitHub.pos[3] + adjacentHub.pos[3]) * 0.5) - (util.GetRandomFloat(0, 1))
-                nodeList[2].pos[3] = ((unitHub.pos[3] + adjacentHub.pos[3]) * 0.5) + (util.GetRandomFloat(0, 1))
+                nodeList[1].pos[3] = ((unitHub.pos[3] + adjacentHub.pos[3]) * 0.5) - (RandomFloat(0, 1))
+                nodeList[2].pos[3] = ((unitHub.pos[3] + adjacentHub.pos[3]) * 0.5) + (RandomFloat(0, 1))
             elseif unitSkirtBounds[1] == adjacentSkirtBounds[3] then
                 nodeList[1].pos[1] = unitHub.pos[1]
                 nodeList[2].pos[1] = adjacentHub.pos[1]
-                nodeList[1].pos[3] = ((unitHub.pos[3] + adjacentHub.pos[3]) * 0.5) + (util.GetRandomFloat(0, 1))
-                nodeList[2].pos[3] = ((unitHub.pos[3] + adjacentHub.pos[3]) * 0.5) - (util.GetRandomFloat(0, 1))
+                nodeList[1].pos[3] = ((unitHub.pos[3] + adjacentHub.pos[3]) * 0.5) + (RandomFloat(0, 1))
+                nodeList[2].pos[3] = ((unitHub.pos[3] + adjacentHub.pos[3]) * 0.5) - (RandomFloat(0, 1))
             elseif unitSkirtBounds[4] == adjacentSkirtBounds[2] then
-                nodeList[1].pos[1] = ((unitHub.pos[1] + adjacentHub.pos[1]) * 0.5) - (util.GetRandomFloat(0, 1))
-                nodeList[2].pos[1] = ((unitHub.pos[1] + adjacentHub.pos[1]) * 0.5) + (util.GetRandomFloat(0, 1))
+                nodeList[1].pos[1] = ((unitHub.pos[1] + adjacentHub.pos[1]) * 0.5) - (RandomFloat(0, 1))
+                nodeList[2].pos[1] = ((unitHub.pos[1] + adjacentHub.pos[1]) * 0.5) + (RandomFloat(0, 1))
                 nodeList[1].pos[3] = unitHub.pos[3]
                 nodeList[2].pos[3] = adjacentHub.pos[3]
             elseif unitSkirtBounds[2] == adjacentSkirtBounds[4] then
-                nodeList[1].pos[1] = ((unitHub.pos[1] + adjacentHub.pos[1]) * 0.5) + (util.GetRandomFloat(0, 1))
-                nodeList[2].pos[1] = ((unitHub.pos[1] + adjacentHub.pos[1]) * 0.5) - (util.GetRandomFloat(0, 1))
+                nodeList[1].pos[1] = ((unitHub.pos[1] + adjacentHub.pos[1]) * 0.5) + (RandomFloat(0, 1))
+                nodeList[2].pos[1] = ((unitHub.pos[1] + adjacentHub.pos[1]) * 0.5) - (RandomFloat(0, 1))
                 nodeList[1].pos[3] = unitHub.pos[3]
                 nodeList[2].pos[3] = adjacentHub.pos[3]
             else
@@ -1185,10 +1200,10 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
         end
     elseif faction == 'UEF' then
         if unitPos[1] == adjPos[1] or unitPos[3] == adjPos[3] then
-            local DirectionVec = util.GetScaledDirectionVector(unitHub.pos, adjacentHub.pos, 0.35)
+            local DirectionVec = Utils.GetScaledDirectionVector(unitHub.pos, adjacentHub.pos, 0.35)
             DirectionVec[2] = 0
-            local PerpVec = util.Cross(DirectionVec, Vector(0, 0.35, 0))
-            if util.GetRandomInt(0, 1) == 1 then
+            local PerpVec = Utils.Cross(DirectionVec, Vector(0, 0.35, 0))
+            if Utils.GetRandomInt(0, 1) == 1 then
                 PerpVec[1] = -PerpVec[1]
                 PerpVec[2] = -PerpVec[2]
                 PerpVec[3] = -PerpVec[3]
@@ -1196,7 +1211,7 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
 
             -- Initialize 2 midpoint segments
             for _, v in nodeList do
-                v.pos = util.GetMidPoint(unitHub.pos, adjacentHub.pos)
+                v.pos = Utils.GetMidPoint(unitHub.pos, adjacentHub.pos)
             end
 
             -- Offset beam positions
@@ -1265,7 +1280,7 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
         -- Attach beams to the adjacent unit
         for i = 1, numNodes + 1 do
             if nodeList[i].mesh ~= nil then
-                local vec = util.GetDirectionVector(Vector(nodeList[i].pos[1], nodeList[i].pos[2], nodeList[i].pos[3]), Vector(nodeList[i + 1].pos[1], nodeList[i + 1].pos[2], nodeList[i + 1].pos[3]))
+                local vec = Utils.GetDirectionVector(Vector(nodeList[i].pos[1], nodeList[i].pos[2], nodeList[i].pos[3]), Vector(nodeList[i + 1].pos[1], nodeList[i + 1].pos[2], nodeList[i + 1].pos[3]))
                 nodeList[i].entity:SetOrientation(OrientFromDir(vec), true)
             end
             if beamEffect then
@@ -1278,7 +1293,7 @@ function CreateAdjacencyBeams(unit, adjacentUnit, AdjacencyBeamsBag)
 end
 
 function PlaySacrificingEffects(unit, target_unit)
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
     local faction = bp.General.FactionName
 
     if faction == 'Aeon' then
@@ -1289,7 +1304,7 @@ function PlaySacrificingEffects(unit, target_unit)
 end
 
 function PlaySacrificeEffects(unit, target_unit)
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
     local faction = bp.General.FactionName
 
     if faction == 'Aeon' then
@@ -1300,7 +1315,7 @@ function PlaySacrificeEffects(unit, target_unit)
 end
 
 function PlayReclaimEffects(reclaimer, reclaimed, BuildEffectBones, EffectsBag)
-    local pos = reclaimed:GetPosition()
+    local pos = GetPosition(reclaimed)
     pos[2] = GetTerrainHeight(pos[1], pos[3])
 
     local beamEnd = Entity()
@@ -1478,7 +1493,7 @@ function PlayTeleportChargingEffects(unit, TeleportDestination, EffectsBag, tele
         return
     end
 
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
     local faction = bp.General.FactionName
     local Yoffset = TeleportGetUnitYOffset(unit)
 
@@ -1600,13 +1615,13 @@ end
 
 function TeleportGetUnitYOffset(unit)
     -- Returns how high to create effects to make the effects appear in the center of the unit
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
     return bp.Display.TeleportEffects.FxChargeAtDestOffsetY or ((bp.Physics.MeshExtentsY or bp.SizeY or 2) / 2)
 end
 
 function TeleportGetUnitSizes(unit)
     -- Returns the sizes of the unit, to be used for teleportation effects
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
     return (bp.Display.TeleportEffects.FxSizeX or bp.Physics.MeshExtentsX or bp.SizeX or 1),
            (bp.Display.TeleportEffects.FxSizeY or bp.Physics.MeshExtentsY or bp.SizeY or 1),
            (bp.Display.TeleportEffects.FxSizeZ or bp.Physics.MeshExtentsZ or bp.SizeZ or 1),
@@ -1624,7 +1639,7 @@ end
 
 function TeleportShowChargeUpFxAtUnit(unit, effectTemplate, EffectsBag)
     -- Creates charge up effects at the unit
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
     local bones = bp.Display.TeleportEffects.ChargeFxAtUnitBones or {Bone = 0, Offset = {0, 0.25, 0}, }
     local bone, ox, oy, oz
     local emitters = {}
@@ -1645,7 +1660,7 @@ end
 
 function TeleportCreateCybranSphere(unit, location, initialScale)
     -- Creates the sphere used by Cybran teleportation effects
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
     local scale = 1
 
     local sx, sy, sz = TeleportGetUnitSizes(unit)
@@ -1668,7 +1683,7 @@ function TeleportCreateCybranSphere(unit, location, initialScale)
 end
 
 function TeleportChargingProgress(unit, fraction)
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
 
     if bp.Display.TeleportEffects.PlayChargeFxAtDestination ~= false then
         fraction = MathMin(MathMax(fraction, 0.01), 1)
@@ -1713,7 +1728,7 @@ end
 
 function PlayTeleportOutEffects(unit, EffectsBag)
     -- Fired when the unit is being teleported, just before the unit is taken from its original location
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
     local faction = bp.General.FactionName
     local Yoffset = TeleportGetUnitYOffset(unit)
 
@@ -1754,7 +1769,7 @@ end
 
 function DoTeleportInDamage(unit)
     -- Check for teleport dummy weapon and deal the specified damage. Also show fx.
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
     local Yoffset = TeleportGetUnitYOffset(unit)
 
     local dmg = 0
@@ -1792,7 +1807,7 @@ function DoTeleportInDamage(unit)
                 CreateEmitterAtEntity(unit, army, v):OffsetEmitter(0, Yoffset, 0)
             end
 
-            DamageArea(unit, unit:GetPosition(), dmgRadius, dmg, dmgType, dmgFriendly)
+            DamageArea(unit, GetPosition(unit), dmgRadius, dmg, dmgType, dmgFriendly)
         end
     end
 end
@@ -1808,7 +1823,7 @@ end
 
 function PlayTeleportInEffects(unit, EffectsBag)
     -- Fired when the unit is being teleported, just after the unit is taken from its original location
-    local bp = unit:GetBlueprint()
+    local bp = unit.Blueprint
     local faction = bp.General.FactionName
     local Yoffset = TeleportGetUnitYOffset(unit)
     local decalOrient = RandomFloat(0, 2 * math.pi)
@@ -1823,14 +1838,14 @@ function PlayTeleportInEffects(unit, EffectsBag)
                 CreateEmitterAtEntity(unit, unit.Army, v):OffsetEmitter(0, Yoffset, 0)
             end
 
-            CreateDecal(unit:GetPosition(), decalOrient, 'Scorch_generic_002_albedo', '', 'Albedo', 7, 7, 200, 300, unit.Army)
+            CreateDecal(GetPosition(unit), decalOrient, 'Scorch_generic_002_albedo', '', 'Albedo', 7, 7, 200, 300, unit.Army)
 
             local fn = function(unit)
-                local bp = unit:GetBlueprint()
+                local bp = unit.Blueprint
                 local MeshExtentsY = (bp.Physics.MeshExtentsY or 1)
 
                 CreateLightParticle(unit, -1, unit.Army, 4, 10, 'glow_03', 'ramp_yellow_01')
-                DamageArea(unit, unit:GetPosition(), 9, 1, 'Force', true)
+                DamageArea(unit, GetPosition(unit), 9, 1, 'Force', true)
 
                 unit.TeleportFx_IsInvisible = true
                 unit:HideBone(0, true)
@@ -1846,7 +1861,7 @@ function PlayTeleportInEffects(unit, EffectsBag)
             local thread = unit:ForkThread(fn)
         elseif faction == 'Cybran' then
             if not unit.TeleportCybranSphere then
-                local pos = TeleportLocationToSurface(table.copy(unit:GetPosition()))
+                local pos = TeleportLocationToSurface(table.copy(GetPosition(unit)))
                 pos[2] = pos[2] + Yoffset
                 unit.TeleportCybranSphere = TeleportCreateCybranSphere(unit, pos)
             end
@@ -1858,9 +1873,9 @@ function PlayTeleportInEffects(unit, EffectsBag)
             end
 
             CreateLightParticle(unit.TeleportCybranSphere, -1, unit.Army, 4, 10, 'glow_02', 'ramp_white_01')
-            DamageArea(unit, unit:GetPosition(), 9, 1, 'Force', true)
+            DamageArea(unit, GetPosition(unit), 9, 1, 'Force', true)
 
-            CreateDecal(unit:GetPosition(), decalOrient, 'Scorch_generic_002_albedo', '', 'Albedo', 7, 7, 200, 300, unit.Army)
+            CreateDecal(GetPosition(unit), decalOrient, 'Scorch_generic_002_albedo', '', 'Albedo', 7, 7, 200, 300, unit.Army)
 
             local fn = function(unit)
                 unit.TeleportFx_IsInvisible = true
@@ -1885,7 +1900,7 @@ function PlayTeleportInEffects(unit, EffectsBag)
         elseif faction == 'Seraphim' then
             local fn = function(unit)
 
-                local bp = unit:GetBlueprint()
+                local bp = unit.Blueprint
                 local Yoffset = TeleportGetUnitYOffset(unit)
 
                 unit.TeleportFx_IsInvisible = true
@@ -1897,11 +1912,11 @@ function PlayTeleportInEffects(unit, EffectsBag)
                 end
 
                 CreateLightParticle(unit, -1, unit.Army, 4, 15, 'glow_05', 'ramp_jammer_01')
-                DamageArea(unit, unit:GetPosition(), 9, 1, 'Force', true)
+                DamageArea(unit, GetPosition(unit), 9, 1, 'Force', true)
 
                 local decalOrient = RandomFloat(0, 2 * math.pi)
-                CreateDecal(unit:GetPosition(), decalOrient, 'crater01_albedo', '', 'Albedo', 4, 4, 200, 300, unit.Army)
-                CreateDecal(unit:GetPosition(), decalOrient, 'crater01_normals', '', 'Normals', 4, 4, 200, 300, unit.Army)
+                CreateDecal(GetPosition(unit), decalOrient, 'crater01_albedo', '', 'Albedo', 4, 4, 200, 300, unit.Army)
+                CreateDecal(GetPosition(unit), decalOrient, 'crater01_normals', '', 'Normals', 4, 4, 200, 300, unit.Army)
 
                 WaitSeconds (0.3)
 
@@ -1925,9 +1940,9 @@ function PlayTeleportInEffects(unit, EffectsBag)
                 CreateEmitterAtEntity(unit, unit.Army, v):OffsetEmitter(0, Yoffset, 0)
             end
 
-            DamageArea(unit, unit:GetPosition(), 9, 1, 'Force', true)
+            DamageArea(unit, GetPosition(unit), 9, 1, 'Force', true)
 
-            CreateDecal(unit:GetPosition(), decalOrient, 'Scorch_generic_002_albedo', '', 'Albedo', 7, 7, 200, 300, unit.Army)
+            CreateDecal(GetPosition(unit), decalOrient, 'Scorch_generic_002_albedo', '', 'Albedo', 7, 7, 200, 300, unit.Army)
 
             CreateTeleSteamFX(unit)
         end

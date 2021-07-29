@@ -153,6 +153,9 @@ Unit = Class(moho.unit_methods) {
 
     OnCreate = function(self)
         Entity.OnCreate(self)
+
+        self.Blueprint = self:GetBlueprint()
+
         -- Turn off land bones if this unit has them.
         self:HideLandBones()
 
