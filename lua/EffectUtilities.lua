@@ -19,9 +19,11 @@ local Warp = Warp
 local Vector = Vector
 local Random = Random 
 local WaitSeconds = WaitSeconds
+local CreateEmitterAtBone = CreateEmitterAtBone
 local CreateEmitterAtEntity = CreateEmitterAtEntity
 local CreateEmitterOnEntity = CreateEmitterOnEntity
-local CreateEmitterAtBone = CreateEmitterAtBone
+local CreateAttachedEmitter = CreateAttachedEmitter
+local AttachBeamEntityToEntity = AttachBeamEntityToEntity
 
 -- often used math functions
 local MathCeil = math.ceil 
