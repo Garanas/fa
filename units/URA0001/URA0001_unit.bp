@@ -135,9 +135,9 @@ UnitBlueprint {
         TurnRate = 180,
     },
     SelectionThickness = 0.2,
-    SizeX = 0.25,
-    SizeY = 0.25,
-    SizeZ = 0.25,
+    SizeX = 0.15,
+    SizeY = 0.15,
+    SizeZ = 0.15,
     StrategicIconSortPriority = 105,
     Wreckage = {
         Blueprint = '/props/DefaultWreckage/DefaultWreckage_prop.bp',

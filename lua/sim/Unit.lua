@@ -1910,8 +1910,8 @@ Unit = Class(moho.unit_methods) {
         end
 
         -- TODO: This really shouldn't be here...
-        if self.buildBots then
-            for _, bot in self.buildBots do
+        if self.BuildBots then
+            for _, bot in self.BuildBots do
                 if not bot:BeenDestroyed() then
                     bot:SetCanTakeDamage(true)
                     bot:SetCanBeKilled(true)
@@ -1920,7 +1920,7 @@ Unit = Class(moho.unit_methods) {
                 end
             end
 
-            self.buildBots = nil
+            self.BuildBots = nil
         end
     end,
 
@@ -2675,8 +2675,8 @@ Unit = Class(moho.unit_methods) {
 
     StopBuildingEffects = function(self, built)
         self.BuildEffectsBag:Destroy()
-        if self.buildBots then
-            for _, b in self.buildBots do
+        if self.BuildBots then
+            for _, b in self.BuildBots do
                 ChangeState(b, b.IdleState)
             end
         end

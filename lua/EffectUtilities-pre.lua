@@ -10,139 +10,69 @@ local Entity = import('/lua/sim/Entity.lua').Entity
 local EffectTemplate = import('/lua/EffectTemplates.lua')
 local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
 
--- localize to upvalues instead of globals
-
-local CreateEmitterAtEntity = CreateEmitterAtEntity
-local CreateEmitterOnEntity = CreateEmitterOnEntity
-local CreateEmitterAtBone = CreateEmitterAtBone
-
-local Warp = Warp
-
 function CreateEffects(obj, army, EffectTable)
-
-    -- initialize emitters table for optimized population
-    local n = 0
     local emitters = {}
-
-    -- populate it
     for _, v in EffectTable do
-        n = n + 1
-        emitters[n] = CreateEmitterAtEntity(obj, army, v)
+        table.insert(emitters, CreateEmitterAtEntity(obj, army, v))
     end
-
-    -- return both table and the number of elements
-    return emitters, n
+    return emitters
 end
 
 function CreateEffectsWithOffset(obj, army, EffectTable, x, y, z)
-    -- initialize emitters table for optimized population
-    local n = 0
     local emitters = {}
-
-    -- populate it
     for _, v in EffectTable  do
-        n = n + 1
-        emitters[n] = CreateEmitterAtEntity(obj, army, v):OffsetEmitter(x, y, z)
+        table.insert(emitters, CreateEmitterAtEntity(obj, army, v):OffsetEmitter(x, y, z))
     end
-
-    -- return both table and the number of elements
-    return emitters, n
+    return emitters
 end
 
 function CreateEffectsWithRandomOffset(obj, army, EffectTable, xRange, yRange, zRange)
-    -- initialize emitters table for optimized population
-    local n = n + 1
     local emitters = {}
-
-    -- populate it
     for _, v in EffectTable do
-        emitters[n] = CreateEmitterOnEntity(obj, army, v):OffsetEmitter(util.GetRandomOffset(xRange, yRange, zRange, 1))
-        n = n + 1
+        table.insert(emitters, CreateEmitterOnEntity(obj, army, v):OffsetEmitter(util.GetRandomOffset(xRange, yRange, zRange, 1)))
     end
-
-    -- return both table and the number of elements
-    return emitters, n
+    return emitters
 end
 
 function CreateBoneEffects(obj, bone, army, EffectTable)
-    -- initialize emitters table for optimized population
-    local n = 0
     local emitters = {}
-
-    -- populate it
     for _, v in EffectTable do
-        n = n + 1
-        emitters[n] = CreateEmitterAtBone(obj, bone, army, v)
+        table.insert(emitters, CreateEmitterAtBone(obj, bone, army, v))
     end
-
-    -- return both table and the number of elements
-    return emitters, n
+    return emitters
 end
 
 function CreateBoneEffectsOffset(obj, bone, army, EffectTable, x, y, z)
-    -- initialize emitters table for optimized population
-    local n = 0
     local emitters = {}
-
-    -- populate it
     for _, v in EffectTable do
-        n = n + 1
-        emitters[n] = CreateEmitterAtBone(obj, bone, army, v):OffsetEmitter(x, y, z)
+        table.insert(emitters, CreateEmitterAtBone(obj, bone, army, v):OffsetEmitter(x, y, z))
     end
-
-    -- return both table and the number of elements
     return emitters
 end
 
 function CreateBoneTableEffects(obj, BoneTable, army, EffectTable)
-    -- initialize emitters table for optimized population
-    local n = 0 
-    local emitters = { }
-    
-    -- populate it
     for _, vBone in BoneTable do
         for _, vEffect in EffectTable do
-            n = n + 1
-            emitters[n] = CreateEmitterAtBone(obj, vBone, army, vEffect)
+            table.insert(emitters, CreateEmitterAtBone(obj, vBone, army, vEffect))
         end
     end
-
-    -- return both table and the number of elements
-    return emitters, n 
 end
 
 function CreateBoneTableRangedScaleEffects(obj, BoneTable, EffectTable, army, ScaleMin, ScaleMax)
-    -- initialize emitters table for optimized population
-    local n = 0
-    local emitters = { }
-
-    -- populate it
     for _, vBone in BoneTable do
         for _, vEffect in EffectTable do
-            n = n + 1
-            emitters[n] = CreateEmitterAtBone(obj, vBone, army, vEffect):ScaleEmitter(util.GetRandomFloat(ScaleMin, ScaleMax))
+            CreateEmitterAtBone(obj, vBone, army, vEffect):ScaleEmitter(util.GetRandomFloat(ScaleMin, ScaleMax))
         end
     end
-
-    -- return both table and the number of elements
-    return emitters, n 
 end
 
 function CreateRandomEffects(obj, army, EffectTable, NumEffects)
-    -- get number of entries
     local NumTableEntries = table.getn(EffectTable)
-
-    -- initialize emitters table for optimized population
     local emitters = {}
-
-    -- populate it
     for i = 1, NumEffects do
-        local ri = util.GetRandomInt(1, NumTableEntries)
-        emitters[i] = CreateEmitterOnEntity(obj, army, EffectTable[ri])
+        table.insert(emitters, CreateEmitterOnEntity(obj, army, EffectTable[util.GetRandomInt(1, NumTableEntries)]))
     end
-    
-        -- return both table and the number of elements
-    return emitters, NumEffects
+    return emitters
 end
 
 function ScaleEmittersParam(Emitters, param, minRange, maxRange)
@@ -155,7 +85,7 @@ function CreateBuildCubeThread(unitBeingBuilt, builder, OnBeingBuiltEffectsBag)
     unitBeingBuilt.BuildingCube = true
     local bp = unitBeingBuilt:GetBlueprint()
     local mul = 1.15
-    local xPos, yPos, zPos = unitBeingBuilt:GetPositionXYZ()
+    local xPos, yPos, zPos = unpack(unitBeingBuilt:GetPosition())
     local proj = nil
     yPos = yPos + (bp.Physics.MeshExtentsOffsetY or 0)
 
@@ -404,7 +334,7 @@ end
 
 function CreateAeonBuildBaseThread(unitBeingBuilt, builder, EffectsBag)
     local bp = unitBeingBuilt:GetBlueprint()
-    local x, y, z = unitBeingBuilt:GetPositionXYZ()
+    local x, y, z = unpack(unitBeingBuilt:GetPosition())
     local mul = 0.5
     local sx = bp.Physics.MeshExtentsX or bp.Footprint.SizeX * mul
     local sz = bp.Physics.MeshExtentsZ or bp.Footprint.SizeZ * mul
@@ -422,11 +352,11 @@ function CreateAeonBuildBaseThread(unitBeingBuilt, builder, EffectsBag)
     EffectsBag:Add(BuildBaseEffect)
 
     CreateEmitterOnEntity(BuildBaseEffect, builder.Army, '/effects/emitters/aeon_being_built_ambient_01_emit.bp')
-        :SetEmitterCurveParam('X_POSITION_CURVE', 0, sx * 1.5)
-        :SetEmitterCurveParam('Z_POSITION_CURVE', 0, sz * 1.5)
+    :SetEmitterCurveParam('X_POSITION_CURVE', 0, sx * 1.5)
+    :SetEmitterCurveParam('Z_POSITION_CURVE', 0, sz * 1.5)
 
     CreateEmitterOnEntity(BuildBaseEffect, builder.Army, '/effects/emitters/aeon_being_built_ambient_03_emit.bp')
-        :ScaleEmitter((sx + sz) * 0.3)
+    :ScaleEmitter((sx + sz) * 0.3)
 
     local slider = CreateSlider(unitBeingBuilt, 0)
     slider:SetWorldUnits(true)
@@ -446,103 +376,90 @@ function CreateAeonBuildBaseThread(unitBeingBuilt, builder, EffectsBag)
     BuildBaseEffect:Destroy()
 end
 
-local BeamBuildEmtBp = '/effects/emitters/build_beam_02_emit.bp'
-
 function CreateCybranBuildBeams(builder, unitBeingBuilt, BuildEffectBones, BuildEffectsBag)
+    WaitSeconds(0.2)
+    local BeamBuildEmtBp = '/effects/emitters/build_beam_02_emit.bp'
+    local BeamEndEntities = {}
+    local ox, oy, oz = unpack(unitBeingBuilt:GetPosition())
 
-    -- if we got any bones that apply to this
     if BuildEffectBones then
-
-        -- create one beam end and keep it
-        if not builder.BuildBeamEnd then 
-            -- construct entity and trash it when the engineer gets trashed
-            builder.BuildBeamEnd = Entity()
-            builder.Trash:Add(builder.BuildBeamEnd)
-        end
-
-        -- to local scope
-        local army = builder.Army
-        local beamEnd = builder.BuildBeamEnd
-
-        -- hold up a bit for cinematics
-        WaitSeconds(0.2)
-
-        -- find a location and warp the beam
-        local ox, oy, oz = unitBeingBuilt:GetPositionXYZ()
-        Warp(beamEnd, Vector(ox, oy, oz))
-
-        -- attach emitters
-        BuildEffectsBag:Add(CreateEmitterOnEntity(beamEnd, army, EffectTemplate.CybranBuildSparks01))
-        BuildEffectsBag:Add(CreateEmitterOnEntity(beamEnd, army, EffectTemplate.CybranBuildFlash01))
-
-        -- attach effects
         for i, BuildBone in BuildEffectBones do
+            local beamEnd = Entity()
+            builder.Trash:Add(beamEnd)
+            table.insert(BeamEndEntities, beamEnd)
+            BuildEffectsBag:Add(beamEnd)
+            Warp(beamEnd, Vector(ox, oy, oz))
+            CreateEmitterOnEntity(beamEnd, builder.Army, EffectTemplate.CybranBuildSparks01)
+            CreateEmitterOnEntity(beamEnd, builder.Army, EffectTemplate.CybranBuildFlash01)
             BuildEffectsBag:Add(AttachBeamEntityToEntity(builder, BuildBone, beamEnd, -1, builder.Army, BeamBuildEmtBp))
         end
+    end
 
-        -- move them around
-        while not builder:BeenDestroyed() and not unitBeingBuilt:BeenDestroyed() do
-
-            -- get a new random position and warp
+    while not builder:BeenDestroyed() and not unitBeingBuilt:BeenDestroyed() do
+        for _, v in BeamEndEntities do
             local x, y, z = builder.GetRandomOffset(unitBeingBuilt, 1)
-            if beamEnd and not beamEnd:BeenDestroyed() then
-                Warp(beamEnd, Vector(ox + x, oy + y, oz + z))
+            if v and not v:BeenDestroyed() then
+                Warp(v, Vector(ox + x, oy + y, oz + z))
             end
-
-            WaitSeconds(0.4)
         end
+        WaitSeconds(0.2)
     end
 end
 
 function SpawnBuildBots(builder, unitBeingBuilt, BuildEffectsBag)
+    -- Buildbots are scaled: ~ 1 pr 15 units of BP
+    -- clamped to a max of 10 to avoid insane FPS drop
+    -- with mods that modify BP
+    local numBots = math.min(math.ceil((10 + builder:GetBuildRate()) / 15), 10)
 
-    -- keeps track of the maximum number of build bots
-    if not builder.BuildMaximumBots then 
-        -- build power is converted into bots, clamp to 10
-        builder.BuildMaximumBots = math.min(math.ceil((10 + builder:GetBuildRate()) / 15), 10)
+    if not builder.buildBots then
+        builder.buildBots = {}
     end
 
-    -- keeps track of the build bots themselves
-    if not builder.BuildBots then
-        builder.BuildBots = {}
-    end
-
-    -- to local scope
-    local BuildBots = builder.BuildBots
-    local BuildMaximumBots = builder.BuildMaximumBots
     local unitBeingBuiltArmy = unitBeingBuilt.Army or nil
 
     -- If is new, won't spawn build bots if they might accidentally capture the unit
     if unitBeingBuiltArmy and ( builder.Army == unitBeingBuiltArmy or IsHumanUnit(unitBeingBuilt) ) then
+        for k, b in builder.buildBots do
+            if b:BeenDestroyed() then
+                builder.buildBots[k] = nil
+            end
+        end
 
-        builder:DetachAll(0)
+        local numUnits = numBots - table.getsize(builder.buildBots)
+        if numUnits > 0 then
+            local x, y, z = unpack(builder:GetPosition())
+            local qx, qy, qz, qw = unpack(builder:GetOrientation())
+            local angleInitial = 180
+            local VecMul = 0.5
+            local xVec = 0
+            local yVec = builder:GetBlueprint().SizeY * 0.5
+            local zVec = 0
 
-        local x, y, z = builder:GetPositionXYZ()
-        local q = builder:GetOrientation()
+            local angle = (2 * math.pi) / numUnits
 
-        -- iterate over the build bots
-        for k = 1, BuildMaximumBots do 
+            -- Launch projectiles at semi-random angles away from the sphere, with enough
+            -- initial velocity to escape sphere core
+            for i = 0, (numUnits - 1) do
+                xVec = math.sin(angleInitial + (i * angle)) * VecMul
+                zVec = math.cos(angleInitial + (i * angle)) * VecMul
 
-            -- to local scope
-            local bot = BuildBots[k]
-            if (not bot) or (bot:BeenDestroyed()) then
-                -- make a new bot
-                bot = CreateUnit('ura0001', builder.Army, x, y + 0.1 * k , z, q[1], q[2], q[3], q[4], 'Air')
+                local bot = CreateUnit('ura0001', builder.Army, x + xVec, y + yVec, z + zVec, qx, qy, qz, qw, 'Air')
 
-                -- make bot unkillable
+                -- Make build bots unkillable
                 bot:SetCanTakeDamage(false)
                 bot:SetCanBeKilled(false)
                 bot.spawnedBy = builder
 
-                -- keep track of it
-                BuildBots[k] = bot 
-            end 
+                table.insert(builder.buildBots, bot)
+            end
+        end
 
-            -- change to build state
+        for _, bot in builder.buildBots do
             ChangeState(bot, bot.BuildState)
         end
 
-        return BuildBots
+        return builder.buildBots
     end
 end
 

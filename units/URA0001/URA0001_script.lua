@@ -87,7 +87,7 @@ URA0001 = Class(CAirUnit) {
                 local pos = self:GetPosition()
                 local bpos = self.spawnedBy:GetPosition()
 
-                if VDist2(pos[1], pos[3], bpos[1], bpos[3]) < 1 then
+                if VDist2Sq(pos[1], pos[3], bpos[1], bpos[3]) < 1 then
                     break
                 end
 

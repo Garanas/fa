@@ -117,7 +117,7 @@ CConstructionUnit = Class(ConstructionUnit){
     end,
 
     CreateBuildEffects = function(self, unitBeingBuilt, order)
-        local buildbots = EffectUtil.SpawnBuildBots(self, unitBeingBuilt, self.BuildEffectsBag)
+        EffectUtil.SpawnBuildBots(self, unitBeingBuilt, self.BuildEffectsBag)
         EffectUtil.CreateCybranBuildBeams(self, unitBeingBuilt, self.BuildEffectBones, self.BuildEffectsBag)
     end,
 }
