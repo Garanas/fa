@@ -87,6 +87,7 @@ UnitBlueprint {
         'VISIBLETORECON',
         'RECLAIMABLE',
         'SHOWATTACKRETICLE',
+        'T3SUBMARINE',
         'NUKESUB',
         'OVERLAYSONAR',
         'OVERLAYINDIRECTFIRE',
