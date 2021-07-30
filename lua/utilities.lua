@@ -5,8 +5,34 @@
 -- Copyright � 2005 Gas Powered Games, Inc.  All rights reserved.
 -----------------------------------------------------------------
 
+-- upvalues instead of globals
+
+-- often used globals
+
+local Rect = Rect
+local Random = Random
+local VDist3 = VDist3
+local VDist3Sq = VDist3Sq
+
+local EntityCategoryContains = EntityCategoryContains
+local EntityCategoryFilterDown = EntityCategoryFilterDown
+
+-- local GetUnitsInRect = GetUnitsInRect -- causes a crash
+
+-- often used metatable functions
+
+local EntityGetPosition = moho.entity_methods.GetPosition
+
+--- Computes the distance between two entities. Use 'GetSquaredDistanceBetweenTwoEntities' when you
+-- are only interested in comparing distances.
 function GetDistanceBetweenTwoEntities(entity1, entity2)
-    return VDist3(entity1:GetPosition(),entity2:GetPosition())
+    return VDist3(EntityGetPosition(entity1),EntityGetPosition(entity2))
+end
+
+--- Computes the squared distance between two entities. Use 'GetDistanceBetweenTwoEntities' if the
+-- distance matters for the computation.
+function GetSquaredDistanceBetweenTwoEntities(entity1, entity2)
+    return VDist3Sq(EntityGetPosition(entity1),EntityGetPosition(entity2))
 end
 
 -- Function originally created to check if a Mass Storage can be queued in a location without overlapping
@@ -37,7 +63,7 @@ function CanBuildInSpot(originUnit, unitId, pos)
     for _, struct in units do
         if struct ~= originUnit then
             local structPhysics = struct:GetBlueprint().Physics
-            local structPos = struct:GetPosition()
+            local structPos = EntityGetPosition(struct)
 
             -- These can be positive or negative, so we need to make them positive using math.abs
             local xDist = math.abs(pos.x - structPos.x)
@@ -57,110 +83,201 @@ function CanBuildInSpot(originUnit, unitId, pos)
     return true
 end
 
--- Note: Includes allied units in selection!!
+--- Gets all units in a sphere that are not yours. It includes allied units. This is a 
+-- gpg-original function and therefore we can not change its behavior.
 function GetEnemyUnitsInSphere(unit, position, radius)
+
+    -- find units in rectangle
     local x1 = position.x - radius
-    local y1 = position.y - radius
     local z1 = position.z - radius
     local x2 = position.x + radius
-    local y2 = position.y + radius
     local z2 = position.z + radius
     local UnitsinRec = GetUnitsInRect(Rect(x1, z1, x2, z2))
 
-    -- Check for empty rectangle
+    -- check for empty rectangle
     if not UnitsinRec then
-        return UnitsinRec
+        return { }
     end
 
-    local RadEntities = {}
+    -- checks whether they're not in our army and whether the unit is in the sphere
+    local RadEntities = { }
+    local RadEntitiesCount = 0
     for _, v in UnitsinRec do
-        local dist = VDist3(position, v:GetPosition())
-        if unit.Army ~= v.Army and dist <= radius then
-            table.insert(RadEntities, v)
+        if unit.Army ~= v.Army then 
+            local dist = VDist3Sq(position, EntityGetPosition(v))
+            if dist <= radius then
+                RadEntitiesCount = RadEntitiesCount + 1
+                RadEntities[RadEntitiesCount] = v
+            end
         end
     end
 
-    return RadEntities
+    return RadEntities, RadEntitiesCount
 end
 
 -- This function is like the one above, but filters out Allied units
 function GetTrueEnemyUnitsInSphere(unit, position, radius, categories)
+
+    -- find units in rectangle
     local x1 = position.x - radius
-    local y1 = position.y - radius
     local z1 = position.z - radius
     local x2 = position.x + radius
-    local y2 = position.y + radius
     local z2 = position.z + radius
     local UnitsinRec = GetUnitsInRect(Rect(x1, z1, x2, z2))
 
-    -- Check for empty rectangle
+    -- check for empty rectangle
     if not UnitsinRec then
         return UnitsinRec
     end
 
-    local RadEntities = {}
+    -- checks whether they're hostile units and whether the unit is in the sphere
+    local RadEntities = { }
+    local RadEntitiesCount = 0
     for _, v in UnitsinRec do
-        local dist = VDist3(position, v:GetPosition())
+        local dist = VDist3Sq(position, EntityGetPosition(v))
         local vArmy = v.Army
-        if unit.Army ~= vArmy and not IsAlly(unit.Army, vArmy) and dist <= radius and EntityCategoryContains(categories or categories.ALLUNITS, v) then
-            table.insert(RadEntities, v)
+        if unit.Army ~= vArmy and not IsAlly(unit.Army, vArmy) then 
+            if categories and EntityCategoryContains(categories, v) then 
+                if dist <= radius then
+                    RadEntitiesCount = RadEntitiesCount + 1
+                    RadEntities[RadEntitiesCount] = v
+                end
+            end
         end
     end
 
-    return RadEntities
+    return RadEntities, RadEntitiesCount
 end
 
+--- Computes the distance between two points. Use 'GetSquaredDistanceBetweenTwoPoints' when you
+-- are only interested in comparing distances.
 function GetDistanceBetweenTwoPoints(x1, y1, z1, x2, y2, z2)
-    return (math.sqrt((x1-x2)^2 + (y1-y2)^2 + (z1-z2)^2))
+    local x = (x1 - x2)
+    local y = (y1 - y2)
+    local z = (z1 - z2)
+    return math.sqrt(x * x + y * y + z * z)
 end
 
+--- Computes the squared distance between two points. Use 'GetDistanceBetweenTwoPoints' if the
+-- distance matters for the computation.
+function GetSquaredDistanceBetweenTwoPoints(x1, y1, z1, x2, y2, z2)
+    local x = (x1 - x2)
+    local y = (y1 - y2)
+    local z = (z1 - z2)
+    return x * x + y * y + z * z
+end
+
+--- Computes the distance between two vectors. Use 'GetSquaredDistanceBetweenTwoVectors' when you
+-- are only interested in comparing distances.
 function GetDistanceBetweenTwoVectors(v1, v2)
     return VDist3(v1, v2)
 end
 
+--- Computes the squared distance between two vectors. Use 'GetDistanceBetweenTwoVectors' if the
+-- distance matters for the computation.
+function GetSquaredDistanceBetweenTwoVectors(v1, v2)
+    return VDist3Sq(v1, v2)
+end
+
+--- Computes the XZ distance between two vectors. Use 'XZSquaredDistanceTwoVectors' when you
+-- are only interested in comparing distances.
 function XZDistanceTwoVectors(v1, v2)
     return VDist2(v1[1], v1[3], v2[1], v2[3])
 end
 
-function GetVectorLength(v)
-    return math.sqrt(math.pow(v.x, 2) + math.pow(v.y, 2) + math.pow(v.z, 2))
+--- Computes the squared distance between two vectors. Use 'XZDistanceTwoVectors' if the
+-- distance matters for the computation.
+function XZSquaredDistanceTwoVectors(v1, v2)
+    return VDist2Sq(v1[1], v1[3], v2[1], v2[3])
 end
 
+--- Computes the length of a vector. Use 'GetVectorSquaredLength' when you
+-- are only interested in comparing lengths.
+function GetVectorLength(v)
+    return math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
+end
+
+--- Computes the length of a vector. Use 'GetVectorLength' when the
+-- length matters for the computation.
+function GetVectorSquaredLength(v)
+    return v.x * v.x + v.y * v.y + v.z * v.z
+end
+
+--- Returns the normalized vector.
 function NormalizeVector(v)
-    local length = GetVectorLength(v)
+
+    -- prevents hashing multiple times
+    local x = v.x 
+    local y = v.y
+    local z = v.z
+
+    -- normalize the vector
+    local length = math.sqrt(x * x + y * y + z * z)
     if length > 0 then
         local invlength = 1 / length
-        return Vector(v.x * invlength, v.y * invlength, v.z * invlength)
+        return Vector(invlength * x, invlength * y, invlength * z)
     else
         return Vector(0,0,0)
     end
 end
 
+--- Computes the vector that points from v1 to v2.
 function GetDifferenceVector(v1, v2)
     return Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z)
 end
 
+--- Computes the normalized vector that points from v1 to v2.
 function GetDirectionVector(v1, v2)
-    return NormalizeVector(Vector(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z))
+
+    -- prevents hashing multiple times
+    local x = v1.x - v2.x
+    local y = v1.y - v2.y
+    local z = v1.z - v2.z
+
+    -- normalize the vector
+    local length = math.sqrt(x * x + y * y + z * z)
+    if length > 0 then
+        local invlength = 1 / length
+        return Vector(invlength * x, invlength * y, invlength * z)
+    else
+        return Vector(0,0,0)
+    end
 end
 
+--- Computes the normalized and then scaled vector that points from v1 to v2.
 function GetScaledDirectionVector(v1, v2, scale)
-    local vec = GetDirectionVector(v1, v2)
-    return Vector(vec.x * scale, vec.y * scale, vec.z * scale)
+
+    -- prevents hashing multiple times
+    local x = v1.x - v2.x
+    local y = v1.y - v2.y
+    local z = v1.z - v2.z
+
+    -- normalize the vector
+    local length = math.sqrt(x * x + y * y + z * z)
+    if length > 0 then
+        local scaledInvLength = scale / length
+        return Vector(scaledInvLength * x, scaledInvLength * y, scaledInvLength * z)
+    else
+        return Vector(0,0,0)
+    end
 end
 
+--- Computes the vector in the center of two other vectors.
 function GetMidPoint(v1, v2)
-    return Vector((v1.x + v2.x) * 0.5, (v1.y + v2.y) * 0.5, (v1.z + v2.z) * 0.5)
+    return Vector(0.5 * (v1.x + v2.x), 0.5 * (v1.y + v2.y), 0.5 * (v1.z + v2.z))
 end
 
+--- Computes a random float within the boundaries. Do not use in critical code - instead, copy the body.
 function GetRandomFloat(nmin, nmax)
     return Random() * (nmax - nmin) + nmin
 end
 
+--- Computes a random integer within the boundaries. Do not use in critical code - instead, copy the body.
 function GetRandomInt(nmin, nmax)
     return Random(nmin, nmax)
 end
 
+--- Computes a random offset - often used for emitters.
 function GetRandomOffset(sx, sy, sz, scalar)
     sx = sx * scalar
     sy = sy * scalar
@@ -172,6 +289,7 @@ function GetRandomOffset(sx, sy, sz, scalar)
     return x, y, z
 end
 
+--- Computes a random offset - often used for emitters.
 function GetRandomOffset2(sx, sy, sz, scalar)
     sx = sx * scalar
     sy = sy * scalar
@@ -183,18 +301,26 @@ function GetRandomOffset2(sx, sy, sz, scalar)
     return x, y, z
 end
 
-function GetClosestVector(vFrom, vToList)
-    local dist, cDist, retVec = 0
-    if vToList then
-        dist = GetDistanceBetweenTwoVectors(vFrom, vToList[1])
-        retVec = vToList[1]
-    end
+--- Computes the closest vector from a list of vectors.
+function GetClosestVector(vFrom, vToList, vToListCount)
 
-    for kTo, vTo in vToList do
-        cDist = GetDistanceBetweenTwoVectors(vFrom, vTo)
+    -- locals used during function
+    local dist, cDist, retVec = 0
+
+    -- compute initial state
+    dist = VDist3Sq(vFrom, vToList[1])
+    retVec = vToList[1]
+
+    -- compute count if not provided
+    vToListCount = vToListCount or table.getn(vToList)
+
+    -- find closest vector
+    for k = 2, vToListCount do 
+        local element = vToList[k]
+        cDist = VDist3Sq(vFrom, element)
         if dist > cDist then
             dist = cDist
-            retVec = vTo
+            retVec = element
         end
     end
 

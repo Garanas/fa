@@ -79,9 +79,9 @@ end
 
 -- end
 
--- -- ran by: (Jip) Willem Wijnia
--- -- hardware: AMD Ryzen 3600 6-core
--- -- time: 34.69970703125
+-- ran by: (Jip) Willem Wijnia
+-- hardware: AMD Ryzen 3600 6-core
+-- time: 34.69970703125
 
 -- function AddGetnLocal()
 

@@ -6,7 +6,7 @@ function ClosureA()
 
     local start = GetSystemTimeSecondsOnlyForProfileUse()
 
-    for i=1,1000000 do
+    for i=1,100000 do
         local x = func1(1,2,function(a) return a*2 end)
     end
 
@@ -26,7 +26,7 @@ function ClosureB()
     
     local start = GetSystemTimeSecondsOnlyForProfileUse()
 
-    for i=1,1000000 do
+    for i=1,100000 do
         local x = func1(1,2,func2)
     end
 

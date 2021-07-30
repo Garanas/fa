@@ -20,15 +20,20 @@ function RunToSync()
     -- import them
     for k, file in files do 
 
+        coroutine.yield(10)
+
         results[file] = { }
 
         -- load in the benchmark and run them
         local benchmark = import(file)
         for e, element in benchmark do 
+
+
+
             if not table.find(FunctionsToExclude, e) then 
                 if type(element) == "function" then 
-
                     LOG("Running " .. e .. " of file " .. file)
+
                     results[file][e] = {
                           Time = element()
                         , Code = debug.listcode(element)
