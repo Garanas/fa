@@ -5,7 +5,7 @@
 #**
 #**  Summary  :  Aeon Quantum Resource Generator
 #**
-#**  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+#**  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 #****************************************************************************
 local AStructureUnit = import('/lua/aeonunits.lua').AStructureUnit
 local FxAmbient = import('/lua/effecttemplates.lua').AResourceGenAmbient
@@ -37,8 +37,8 @@ XAB1401 = Class(AStructureUnit) {
             local aiBrain = self:GetAIBrain()
             local massAdd = 0
             local energyAdd = 0
-            local maxMass = self:GetBlueprint().Economy.MaxMass
-            local maxEnergy = self:GetBlueprint().Economy.MaxEnergy
+            local maxMass = self.Blueprint.Economy.MaxMass
+            local maxEnergy = self.Blueprint.Economy.MaxEnergy
 
             while true do
                 local massNeed = aiBrain:GetEconomyRequested('MASS') * 10

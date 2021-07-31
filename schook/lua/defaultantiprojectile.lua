@@ -2,6 +2,7 @@
 
 Flare = Class(Entity) {
     OnCreate = function(self, spec)
+        Entity.OnCreate(self)
         self.Army = self:GetArmy()
         self.Owner = spec.Owner
         self.Radius = spec.Radius or 5
@@ -27,6 +28,7 @@ Flare = Class(Entity) {
 
 DepthCharge = Class(Entity) {
     OnCreate = function(self, spec)
+        Entity.OnCreate(self)
         self.Army = self:GetArmy()
         self.Owner = spec.Owner
         self.Radius = spec.Radius

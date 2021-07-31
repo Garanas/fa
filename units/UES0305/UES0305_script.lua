@@ -5,7 +5,7 @@
 --#**
 --#**  Summary  :  UEF T3 Mobile Sonar
 --#**
---#**  Copyright © 2006 Gas Powered Games, Inc.  All rights reserved.
+--#**  Copyright ï¿½ 2006 Gas Powered Games, Inc.  All rights reserved.
 --#****************************************************************************
 local TSeaUnit = import('/lua/terranunits.lua').TSeaUnit
 local TANTorpedoAngler = import('/lua/terranweapons.lua').TANTorpedoAngler
@@ -66,7 +66,7 @@ UES0305 = Class(TSeaUnit) {
     StartBeingBuiltEffects = function(self, builder, layer)
         self:HideBone(0, true)
         self.BeingBuiltShowBoneTriggered = false
-        if self:GetBlueprint().General.UpgradesFrom ~= builder.UnitId then
+        if self.Blueprint.General.UpgradesFrom ~= builder.UnitId then
             self.OnBeingBuiltEffectsBag:Add(self:ForkThread(CreateBuildCubeThread, builder, self.OnBeingBuiltEffectsBag))
         end
     end,

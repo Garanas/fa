@@ -5,7 +5,7 @@
 --#**
 --#**  Summary  :  UEF Frigate Script
 --#**
---#**  Copyright © 2005 Gas Powered Games, Inc.  All rights reserved.
+--#**  Copyright ï¿½ 2005 Gas Powered Games, Inc.  All rights reserved.
 --#****************************************************************************
 local TSeaUnit = import('/lua/terranunits.lua').TSeaUnit
 local TAALinkedRailgun = import('/lua/terranweapons.lua').TAALinkedRailgun
@@ -27,7 +27,7 @@ UES0103 = Class(TSeaUnit) {
         self.Trash:Add(CreateRotator(self, 'Spinner03', 'y', nil, -180, 0, -180))
         self.RadarEnt = Entity {}
         self.Trash:Add(self.RadarEnt)
-        local bp = self:GetBlueprint()
+        local bp = self.Blueprint
         self.RadarEnt:InitIntel(self.Army, 'Radar', bp.Intel.RadarRadius or 75)
         self.RadarEnt:EnableIntel('Radar')
         self.RadarEnt:InitIntel(self.Army, 'Sonar', bp.Intel.SonarRadius or 75)

@@ -140,7 +140,7 @@ CollisionBeam = Class(moho.CollisionBeamEntity) {
             AttachBeamToEntity(fxBeam, self, 0, self.Army)
 
             -- collide on start if it's a continuous beam
-            local weaponBlueprint = self.Weapon:GetBlueprint()
+            local weaponBlueprint = self.Weapon.Blueprint
             local bCollideOnStart = weaponBlueprint.BeamLifetime <= 0
             self:SetBeamFx(fxBeam, bCollideOnStart)
 
@@ -317,7 +317,7 @@ CollisionBeam = Class(moho.CollisionBeamEntity) {
     end,
 
     SetDamageTable = function(self)
-        local weaponBlueprint = self.Weapon:GetBlueprint()
+        local weaponBlueprint = self.Weapon.Blueprint
         self.DamageTable = {}
         self.DamageTable.DamageRadius = weaponBlueprint.DamageRadius
         self.DamageTable.DamageAmount = weaponBlueprint.Damage

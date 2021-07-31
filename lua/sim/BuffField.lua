@@ -17,7 +17,8 @@ BuffField = Class(Entity) {
     -- EVENTS
     OnCreated = function(self)
         -- Fires when the field is initalised
-        local bp = self:GetBlueprint()
+        self.Blueprint = self:GetBlueprint()
+        local bp = self.Blueprint
         if bp.InitiallyEnabled then
             self:Enable()
         end
@@ -66,8 +67,12 @@ BuffField = Class(Entity) {
     end,
 
     OnCreate = function(self)
+
+        -- Event stuff
+        Entity.OnCreate(self)
+
         local Owner = self:GetOwner()
-        local bp = self:GetBlueprint()
+        local bp = self.Blueprint
 
         -- Verifying blueprint
         if not bp.Name or type(bp.Name) ~= 'string' or bp.Name == '' then WARN('BuffField: Invalid name or name not set!') end
@@ -141,9 +146,6 @@ BuffField = Class(Entity) {
             end
         end
 
-        -- Event stuff
-        Entity.OnCreate(self)
-
         if bp.DisableInTransport then
             Owner:AddUnitCallback(self.DisableInTransport, 'OnAttachedToTransport')
             Owner:AddUnitCallback(self.EnableOutTransport, 'OnDetachedFromTransport')
@@ -161,7 +163,7 @@ BuffField = Class(Entity) {
     end,
 
     GetBuffs = function(self)
-        return self:GetBlueprint().Buffs or nil
+        return self.Blueprint.Buffs or nil
     end,
 
     GetOwner = function(self)
@@ -171,7 +173,7 @@ BuffField = Class(Entity) {
     Enable = function(self)
         if not self:IsEnabled() then
             local Owner = self:GetOwner()
-            local bp = self:GetBlueprint()
+            local bp = self.Blueprint
 
             self.ThreadHandle = self.Owner:ForkThread(self.FieldThread, self)
             Owner:SetEnergyMaintenanceConsumptionOverride(bp.MaintenanceConsumptionPerSecondEnergy or 0)
@@ -196,7 +198,7 @@ BuffField = Class(Entity) {
     -- Owner is the unit that carries the field. This is a bit weird to have it like this but its the result of
     -- of the forkthread in the enable function.
     FieldThread = function(Owner, self)
-        local bp = self:GetBlueprint()
+        local bp = self.Blueprint
 
         while not Owner.Dead do
             local units = self.GetNearbyAffectableUnits()

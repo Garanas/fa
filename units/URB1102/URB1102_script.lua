@@ -5,7 +5,7 @@
 --#**
 --#**  Summary  :  Cybran Hydrocarbon Power Plant Script
 --#**
---#**  Copyright © 2005 Gas Powered Games, Inc.  All rights reserved.
+--#**  Copyright ï¿½ 2005 Gas Powered Games, Inc.  All rights reserved.
 --#****************************************************************************
 local CEnergyCreationUnit = import('/lua/cybranunits.lua').CEnergyCreationUnit
 
@@ -28,7 +28,7 @@ URB1102 = Class(CEnergyCreationUnit) {
             local scale = .5
 
             -- Play the "activate" sound
-            local myBlueprint = self:GetBlueprint()
+            local myBlueprint = self.Blueprint
             if myBlueprint.Audio.Activate then
                 self:PlaySound(myBlueprint.Audio.Activate)
             end

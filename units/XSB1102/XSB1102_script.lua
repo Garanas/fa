@@ -5,7 +5,7 @@
 --#**
 --#**  Summary  :  Seraphim Hydrocarbon Power Plant Script
 --#**
---#**  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+--#**  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 --#****************************************************************************
 local SEnergyCreationUnit = import('/lua/seraphimunits.lua').SEnergyCreationUnit
 XSB1102 = Class(SEnergyCreationUnit) {
@@ -38,7 +38,7 @@ XSB1102 = Class(SEnergyCreationUnit) {
             end
         end
 
-        local bp = self:GetBlueprint().Display
+        local bp = self.Blueprint.Display
         self.LoopAnimation = CreateAnimator(self)
         self.LoopAnimation:PlayAnim(bp.LoopingAnimation, true)
         self.LoopAnimation:SetRate(0.5)

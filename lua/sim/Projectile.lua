@@ -121,6 +121,8 @@ Projectile = Class(moho.projectile_methods, Entity) {
     end,
 
     OnCreate = function(self, inWater)
+        self.Blueprint = self:GetBlueprint()
+
         self.DamageData = {
             DamageRadius = nil,
             DamageAmount = nil,
@@ -131,7 +133,7 @@ Projectile = Class(moho.projectile_methods, Entity) {
         }
         self.Army = self:GetArmy()
         self.Trash = TrashBag()
-        local bp = self:GetBlueprint()
+        local bp = self.Blueprint
         self:SetMaxHealth(bp.Defense.MaxHealth or 1)
         self:SetHealth(self, self:GetMaxHealth())
         local snd = bp.Audio.ExistLoop
@@ -156,13 +158,13 @@ Projectile = Class(moho.projectile_methods, Entity) {
             return false
         end
 
-        if other:GetBlueprint().Physics.HitAssignedTarget and other:GetTrackingTarget() ~= self then
+        if other.Blueprint.Physics.HitAssignedTarget and other:GetTrackingTarget() ~= self then
             return false
         end
 
         local dnc
         for _, p in {{self, other}, {other, self}} do
-            dnc = p[1]:GetBlueprint().DoNotCollideList
+            dnc = p[1].Blueprint.DoNotCollideList
             if dnc then
                 for _, v in dnc do
                     if EntityCategoryContains(ParseEntityCategory(v), p[2]) then
@@ -176,7 +178,7 @@ Projectile = Class(moho.projectile_methods, Entity) {
     end,
 
     OnDamage = function(self, instigator, amount, vector, damageType)
-        local bp = self:GetBlueprint().Defense.MaxHealth
+        local bp = self.Blueprint.Defense.MaxHealth
         if bp then
             self:DoTakeDamage(instigator, amount, vector, damageType)
         else
@@ -206,7 +208,7 @@ Projectile = Class(moho.projectile_methods, Entity) {
 
                 -- Calculate the excess damage amount
                 local excess = health - amount
-                local maxHealth = self:GetBlueprint().Defense.MaxHealth or 10
+                local maxHealth = self.Blueprint.Defense.MaxHealth or 10
                 if excess < 0 and maxHealth > 0 then
                     excessDamageRatio = -excess / maxHealth
                 end
@@ -275,7 +277,7 @@ Projectile = Class(moho.projectile_methods, Entity) {
         end
 
         -- If this unit category is on the weapon's do-not-collide list, skip!
-        local weaponBP = firingWeapon:GetBlueprint()
+        local weaponBP = firingWeapon.Blueprint
         if weaponBP.DoNotCollideList then
             for k, v in pairs(weaponBP.DoNotCollideList) do
                 if EntityCategoryContains(ParseEntityCategory(v), self) then
@@ -319,7 +321,7 @@ Projectile = Class(moho.projectile_methods, Entity) {
         --  'ProjectileUnderWater
         local ImpactEffects = {}
         local ImpactEffectScale = 1
-        local bp = self:GetBlueprint()
+        local bp = self.Blueprint
         local bpAud = bp.Audio
 
         -- Sounds for all other impacts, ie: Impact<TargetTypeName>
@@ -433,14 +435,14 @@ Projectile = Class(moho.projectile_methods, Entity) {
     end,
 
     OnExitWater = function(self)
-        local bp = self:GetBlueprint().Audio['ExitWater']
+        local bp = self.Blueprint.Audio['ExitWater']
         if bp then
             self:PlaySound(bp)
         end
     end,
 
     OnEnterWater = function(self)
-        local bp = self:GetBlueprint().Audio['EnterWater']
+        local bp = self.Blueprint.Audio['EnterWater']
         if bp then
             self:PlaySound(bp)
         end
@@ -475,7 +477,7 @@ Projectile = Class(moho.projectile_methods, Entity) {
     end,
 
     OnLostTarget = function(self)
-        local bp = self:GetBlueprint().Physics
+        local bp = self.Blueprint.Physics
         if bp.TrackTarget and bp.TrackTarget == true then
             if bp.OnLostTargetLifetime then
                 self:SetLifetime(bp.OnLostTargetLifetime)

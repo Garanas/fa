@@ -4,7 +4,7 @@
 --**
 --**  Summary  :  Seraphim Mobile Shield Generator Script
 --**
---**  Copyright © 2005 Gas Powered Games, Inc.  All rights reserved.
+--**  Copyright ï¿½ 2005 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
 local SShieldHoverLandUnit = import('/lua/seraphimunits.lua').SShieldHoverLandUnit
@@ -25,7 +25,7 @@ XSL0307 = Class(SShieldHoverLandUnit) {
         self.ShieldEffectsBag = {}
         
         self.TargetPointer = self:GetWeapon(1) --save the pointer weapon for later - this is extra clever since the pointer weapon has to be first!
-        self.TargetLayerCaps = self:GetBlueprint().Weapon[1].FireTargetLayerCapsTable --we save this to the unit table so dont have to call every time.
+        self.TargetLayerCaps = self.Blueprint.Weapon[1].FireTargetLayerCapsTable --we save this to the unit table so dont have to call every time.
         self.PointerEnabled = true --a flag to let our thread know whether we should turn on our pointer.
     end,
     

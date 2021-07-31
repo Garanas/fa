@@ -435,8 +435,8 @@ AMissileCruiseSubProjectile = Class(EmitterProjectile) {
     FxImpactLand = EffectTemplate.AMissileHit01,
     FxImpactUnderWater = {},
     OnCreate = function(self)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
         SinglePolyTrailProjectile.OnCreate(self)
+        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
     end,
 }
 
@@ -454,8 +454,8 @@ AMissileSerpentineProjectile = Class(SingleCompositeEmitterProjectile) {
     FxImpactUnderWater = {},
     
     OnCreate = function(self)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
         SingleCompositeEmitterProjectile.OnCreate(self)
+        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
     end,
     
     OnImpact = function(self, targetType, targetEntity)
@@ -491,8 +491,8 @@ AMissileSerpentine02Projectile = Class(SingleCompositeEmitterProjectile) {
     FxImpactUnderWater = {},
     
     OnCreate = function(self)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
         SingleCompositeEmitterProjectile.OnCreate(self)
+        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
     end,
 
 }
@@ -955,8 +955,8 @@ ATorpedoSubProjectile = Class(EmitterProjectile) {
     FxNoneHitScale = 1,
     FxImpactNone = {},
     OnCreate = function(self, inWater)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
         EmitterProjectile.OnCreate(self, inWater)
+        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
     end,
 
 }

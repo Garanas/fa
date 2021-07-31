@@ -70,6 +70,8 @@ end
 --but before any armies are created.
 function SetupSession()
 
+    _G.FlatBlueprints = { }
+    
     -- LOG('SetupSession: ', repr(ScenarioInfo))
 
     ArmyBrains = {}

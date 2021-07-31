@@ -1570,7 +1570,7 @@ function AddObjective(Type,         -- 'primary', 'bonus', etc
                                     {
                                         Type = 'Position',
                                         Value = unit:GetPosition(),
-                                        BlueprintId = unit:GetBlueprint().BlueprintId,
+                                        BlueprintId = unit.Blueprint.BlueprintId,
                                         TargetTag=targetTag
                                     },
                                     obj.Tag)

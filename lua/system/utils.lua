@@ -422,6 +422,70 @@ function table.shuffle(t)
     return r
 end
 
+local function flatten(flat, collection, prepend, prependCount, ignore)
+
+    -- array-based table
+    if collection[1] then 
+
+        -- copy over the table into the current key
+        local key = table.concat(prepend)
+        flat[key] = table.copy(collection)
+
+        -- if we find tables inside, go into recursion
+        for k, element in collection do 
+            local te = type(element)
+            if te == "table" then 
+                local output = { }
+                flatten(output, element, { }, 0)
+                flat[key] = output
+            end
+        end
+
+    -- hash-based table
+    else 
+        for k, element in collection do 
+            
+            -- copy the current prepend table
+            local prepend = table.deepcopy(prepend)
+
+            -- add the key
+            local prependCount = prependCount + 1
+            prepend[prependCount] = k 
+
+
+            local te = type(element)
+            if te == "table"  then 
+                -- recursive case
+                if not table.find(ignore, k) then 
+                    flatten(flat, element, prepend, prependCount)
+                -- base case
+                else 
+                    local key = table.concat(prepend)
+                    flat[key] = element 
+                end
+            -- base case
+            else
+                local key = table.concat(prepend)
+                flat[key] = element 
+            end
+        end
+    end
+end
+
+function table.flatten(t, prepend, ignore)
+
+    local pre = { }
+    local preCount = 0
+    if prepend then 
+        preCount = 1
+        pre[1] = prepend 
+    end
+
+    local output = { }
+    flatten(output, t, pre, preCount, ignore)
+    return output
+end
+
 -- table.binsert(t, value, cmp) binary insert value into table using cmp-func
 function table.binsert(t, value, cmp)
       local cmp = cmp or (function(a,b) return a < b end)

@@ -84,7 +84,7 @@ end
 
 function CreateEffectsWithRandomOffset(obj, army, EffectTable, xRange, yRange, zRange)
     -- initialize emitters table for optimized population
-    local n = n + 1
+    local n = 0
     local emitters = {}
 
     -- populate it

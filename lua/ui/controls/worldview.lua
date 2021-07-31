@@ -47,7 +47,7 @@ local function GetSelectedWeaponsWithReticules(filterFunc)
 
     for i, u in selectedUnits do
         if EntityCategoryContains(categories.SHOWATTACKRETICLE, u) then
-            local bp = u:GetBlueprint()
+            local bp = u.Blueprint
             for k, v in bp.Weapon do
                 if filterFunc(v) then
                     weapons[bp.BlueprintId] = v

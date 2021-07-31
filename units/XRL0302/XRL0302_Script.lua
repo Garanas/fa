@@ -16,7 +16,7 @@ local EMPDeathWeapon = Class(Weapon) {
     end,
 
     Fire = function(self)
-        local blueprint = self:GetBlueprint()
+        local blueprint = self.Blueprint
         DamageArea(self.unit, self.unit:GetPosition(), blueprint.DamageRadius,
                    blueprint.Damage, blueprint.DamageType, blueprint.DamageFriendly)
     end,
@@ -103,7 +103,7 @@ XRL0302 = Class(CWalkingLandUnit) {
 
         -- Now handle our special buff
         local bp
-        for k, v in self:GetBlueprint().Buffs do
+        for k, v in self.Blueprint.Buffs do
             if v.Add.OnDeath then
                 bp = v
             end

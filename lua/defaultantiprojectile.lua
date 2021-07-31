@@ -12,6 +12,7 @@ local GetRandomFloat = import('/lua/utilities.lua').GetRandomFloat
 
 Flare = Class(Entity){
         OnCreate = function(self, spec)
+            Entity.OnCreate(self, spec)
             self.Owner = spec.Owner
             self.Radius = spec.Radius or 5
             self:SetCollisionShape('Sphere', 0, 0, 0, self.Radius)
@@ -32,6 +33,7 @@ Flare = Class(Entity){
 
 DepthCharge = Class(Entity){
     OnCreate = function(self, spec)
+        Entity.OnCreate(self, spec)
         self.Owner = spec.Owner
         self.Radius = spec.Radius
         self:SetCollisionShape('Sphere', 0, 0, 0, self.Radius)
