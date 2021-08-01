@@ -79,6 +79,9 @@ Projectile = Class(ProjectileMethods, Entity) {
 
     -- performance-wise this function just hurts and is not needed
     ForkThread = function(self, fn, ...)
+
+        LOG("Projectile forkthread called at: " .. repr(debug.getinfo(2)))
+
         if fn then
             local thread = ForkThread(fn, self, unpack(arg))
             TrashBagAdd(self.Trash, thread)

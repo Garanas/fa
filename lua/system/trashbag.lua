@@ -41,6 +41,7 @@ TrashBag = Class {
     --- Destroy all (remaining) entities in the trash bag.
     Destroy = function(self)
 
+        -- mhh
         if not self then 
             WARN("Attempted to trash non-existing trash bag: "  .. repr(debug.getinfo(3)))
             return 
