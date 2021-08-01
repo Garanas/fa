@@ -4,11 +4,13 @@
 
 CAANanoDartProjectile03 = import('/lua/cybranprojectiles.lua').CAANanoDartProjectile03
 
+local ForkThread = ForkThread
+
 CAANanoDart01 = Class(CAANanoDartProjectile03) {
 
    OnCreate = function(self)
         CAANanoDartProjectile03.OnCreate(self)
-        self:ForkThread(self.UpdateThread)
+        self.Trash:Add(ForkThread(self.UpdateThread, self))
    end,
 
 
