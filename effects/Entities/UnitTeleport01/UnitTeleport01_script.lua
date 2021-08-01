@@ -5,18 +5,20 @@
 #**
 #**  Summary  :  Unit Teleport effect entity
 #**
-#**  Copyright © 2006 Gas Powered Games, Inc.  All rights reserved.
+#**  Copyright ï¿½ 2006 Gas Powered Games, Inc.  All rights reserved.
 #****************************************************************************
 
 local NullShell = import('/lua/sim/defaultprojectiles.lua').NullShell
 local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
 local EffectTemplate = import('/lua/EffectTemplates.lua')
 
+local ForkThread = ForkThread
+
 UnitTeleportEffect01 = Class(NullShell) {
 
     OnCreate = function(self)
         NullShell.OnCreate(self)
-        self:ForkThread(self.TeleportEffectThread)
+        self.Trash:Add(ForkThread(self.TeleportEffectThread, self))
     end,
 
     TeleportEffectThread = function(self)

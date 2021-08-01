@@ -43,7 +43,7 @@ TrashBag = Class {
 
         -- mhh
         if not self then 
-            WARN("Attempted to trash non-existing trash bag: "  .. repr(debug.getinfo(3)))
+            WARN("Attempted to trash non-existing trash bag: "  .. repr(debug.getinfo(2)))
             return 
         end
 
