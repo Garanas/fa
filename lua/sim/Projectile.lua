@@ -440,7 +440,7 @@ Projectile = Class(ProjectileMethods, Entity) {
 
         local timeout = bp.Physics.ImpactTimeout
         if timeout and targetType == 'Terrain' then
-            ForkThread(self.ImpactTimeoutThread, self, timeout)
+            TrashBagAdd(self.Trash, ForkThread(self.ImpactTimeoutThread, self, timeout))
         else
             self:OnImpactDestroy(targetType, targetEntity)
         end

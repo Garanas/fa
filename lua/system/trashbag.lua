@@ -25,7 +25,6 @@ TrashBag = Class {
         -- mhh
         if entity == nil then 
             WARN("Attempted to add a nil to a TrashBag: " .. repr(debug.getinfo(2)))
-
             return 
         end
 
@@ -41,6 +40,12 @@ TrashBag = Class {
 
     --- Destroy all (remaining) entities in the trash bag.
     Destroy = function(self)
+
+        if not self then 
+            WARN("Attempted to trash non-existing trash bag: "  .. repr(debug.getinfo(3)))
+            return 
+        end
+
         -- check if values are still relevant
         for k = 1, self.Count do 
             if self[k] then 
