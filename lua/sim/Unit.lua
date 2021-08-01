@@ -157,17 +157,6 @@ Unit = Class(moho.unit_methods) {
 
         self.Blueprint = self:GetBlueprint()
 
-        -- find flat version of the blueprint
-        local id = self.Blueprint.BlueprintId
-        local blueprintFlat = FlatBlueprints[id]
-        if not blueprintFlat then 
-            blueprintFlat = table.flatten(self.Blueprint, "Blueprint", { "MovementEffects", "Audio", "Enhancements", "ActiveIntel" })
-            FlatBlueprints[id] = blueprintFlat
-        end
-
-        -- store reference to flat version of the blueprint
-        self.BlueprintFlat = blueprintFlat
-
         -- Turn off land bones if this unit has them.
         self:HideLandBones()
 
@@ -2338,7 +2327,7 @@ Unit = Class(moho.unit_methods) {
     end,
 
     StartBeingBuiltEffects = function(self, builder, layer)
-        local BuildMeshBp = self.BlueprintFlatDisplayBuildMeshBlueprint$3
+        local BuildMeshBp = self.Blueprint.Display.BuildMeshBlueprint
         if BuildMeshBp then
             self:SetMesh(BuildMeshBp, true)
         end
