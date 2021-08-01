@@ -88,9 +88,7 @@ Tree = Class(Prop) {
                 table.insert(effects, fx)
                 self.Trash:Add(fx)
             end
-            fx = CreateLightParticleIntel( self, -1, -1, 1.5, 10, 'glow_03', 'ramp_flare_02' )
-            table.insert(effects, fx)
-            self.Trash:Add(fx)
+            CreateLightParticleIntel( self, -1, -1, 1.5, 10, 'glow_03', 'ramp_flare_02' )
 
             self:PlayPropSound('BurnStart')
             self:PlayPropAmbientSound('BurnLoop')
