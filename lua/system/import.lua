@@ -12,11 +12,22 @@ __module_metatable = {
     __index = _G
 }
 
+-- turn into upvalues for better performance
+local SPEW = SPEW
+local pcall = pcall
+local setmetatable = setmetatable
+local FileCollapsePath = FileCollapsePath
+
+local StringLower = string.lower
+local StringSub = string.sub
+
+local modules = __modules   -- yes, defined above but that is in global scope
+
 function import(name)
 
     -- First check if the module already exists
-    name = string.lower(name)
-    local existing = __modules[name]
+    name = StringLower(name)
+    local existing = modules[name]
     if existing then
         return existing
     end
@@ -24,13 +35,13 @@ function import(name)
     SPEW("Loading module '", name, "'")
     
     -- Set up an environment for the new module
-    local env
+    local env 
     env = {
         __moduleinfo = { name = name, used_by = {}, track_imports = true },
 
         -- Define a new 'import' function customized for the module, to track import dependencies.
         import = function(name2)
-            if string.sub(name2,1,1)!='/' then
+            if StringSub(name2,1,1)!='/' then
                 name2 = FileCollapsePath(name .. '/../' .. name2)
             end
             local m2 = import(name2) -- this will use the global import
@@ -42,11 +53,11 @@ function import(name)
     }
     setmetatable(env, __module_metatable)
 
-    __modules[name] = env
+    modules[name] = env
 
     local ok, msg = pcall(doscript, name, env)
     if not ok then
-        __modules[name] = nil
+        modules[name] = nil
         WARN(msg)
         error("Error importing '" .. name .. "'", 2)
     end
@@ -62,11 +73,11 @@ end
 -- Clear out a module from the table of loaded modules, so that on the next import attempt it will
 -- get reloaded from scratch.
 function dirty_module(name, why)
-    local m = __modules[name]
+    local m = modules[name]
     if m then
         if why then LOG("Module '", name, "' changed on disk") end
         LOG("  marking '",name,"' for reload")
-        __modules[name] = nil
+        modules[name] = nil
         local deps = m.__moduleinfo.used_by
         if deps then
             for k,_ in deps do
