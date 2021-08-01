@@ -5,7 +5,7 @@
 #**
 #**  Summary  : Aeon Flare
 #**
-#**  Copyright © 2005 Gas Powered Games, Inc.  All rights reserved.
+#**  Copyright ï¿½ 2005 Gas Powered Games, Inc.  All rights reserved.
 #****************************************************************************
 local Flare = import('/lua/defaultantiprojectile.lua').Flare
 local AIMFlareProjectile = import('/lua/aeonprojectiles.lua').AIMFlareProjectile
@@ -15,11 +15,11 @@ AIMFlare01 = Class(AIMFlareProjectile) {
     OnCreate = function(self)
         AIMFlareProjectile.OnCreate(self)
         #LOG('*DEBUG: FLARE CREATED')
-        #self:SetCollisionShape('Sphere', 0, 0, 0, self:GetBlueprint().Physics.FlareRadius)
+        #self:SetCollisionShape('Sphere', 0, 0, 0, self.Blueprint.Physics.FlareRadius)
 
         self.MyShield = Flare {
             Owner = self,
-            Radius = self:GetBlueprint().Physics.FlareRadius,
+            Radius = self.Blueprint.Physics.FlareRadius,
         }
         self.Trash:Add(self.MyShield)
         self:TrackTarget(false)

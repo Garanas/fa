@@ -5,7 +5,7 @@
 #**
 #**  Summary  :  Aeon Torpedo Cluster Projectile script, XAA0306
 #**
-#**  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+#**  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 #****************************************************************************
 local ATorpedoCluster = import('/lua/aeonprojectiles.lua').ATorpedoCluster
 local VizMarker = import('/lua/sim/VizMarker.lua').VizMarker
@@ -20,7 +20,7 @@ AANTorpedoCluster01 = Class(ATorpedoCluster) {
         ATorpedoCluster.OnCreate(self)
         self.HasImpacted = false
 
-		CreateTrail(self, -1, self:GetArmy(), import('/lua/EffectTemplates.lua').ATorpedoPolyTrails01)
+		CreateTrail(self, -1, self.Army, import('/lua/EffectTemplates.lua').ATorpedoPolyTrails01)
         
     end,
 
@@ -56,7 +56,7 @@ AANTorpedoCluster01 = Class(ATorpedoCluster) {
             LifeTime = 10,
             Omni = false,
             Vision = false,
-            Army = self:GetArmy(),
+            Army = self.Army,
         }
         local vizEntity = VizMarker(spec)
         ATorpedoCluster.OnEnterWater(self)

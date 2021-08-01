@@ -5,7 +5,7 @@
 #**
 #**  Summary  :  Aeon Guided Missile, DAA0206
 #**
-#**  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+#**  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 #****************************************************************************
 local AGuidedMissileProjectile = import('/lua/aeonprojectiles.lua').AGuidedMissileProjectile
 local RandF = import('/lua/utilities.lua').GetRandomFloat
@@ -25,7 +25,7 @@ AIFGuidedMissile = Class(AGuidedMissileProjectile) {
 		
         ###Create/play the split effects.
 		for k,v in EffectTemplate.AMercyGuidedMissileSplit do
-            CreateEmitterOnEntity(self,self:GetArmy(),v)
+            CreateEmitterOnEntity(self,self.Army,v)
         end
         
         

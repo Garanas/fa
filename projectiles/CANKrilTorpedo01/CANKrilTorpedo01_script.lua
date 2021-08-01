@@ -5,7 +5,7 @@
 #**
 #**  Summary  :  Kril Torpedo Projectile script, XRB2308
 #**
-#**  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+#**  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 #****************************************************************************
 local CKrilTorpedo = import('/lua/cybranprojectiles.lua').CKrilTorpedo
 
@@ -22,7 +22,7 @@ CANKrilTorpedo01 = Class(CKrilTorpedo) {
     
     OnEnterWater = function(self)
         CKrilTorpedo.OnEnterWater(self)
-        local army = self:GetArmy()
+        local army = self.Army
         for i in self.FxEnterWater do #splash
             CreateEmitterAtEntity(self,army,self.FxEnterWater[i])
         end

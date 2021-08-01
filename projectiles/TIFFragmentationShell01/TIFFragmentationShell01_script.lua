@@ -5,7 +5,7 @@
 #**
 #**  Summary  :  Terran Fragmentation Shells, DEL0204
 #**
-#**  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+#**  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 #****************************************************************************
 local TArtilleryProjectile = import('/lua/terranprojectiles.lua').TArtilleryProjectile
 local EffectTemplate = import('/lua/EffectTemplates.lua')
@@ -17,11 +17,11 @@ TIFFragmentationShell01 = Class(TArtilleryProjectile) {
     
     #OnCreate = function(self)
     #    TArtilleryProjectile.OnCreate(self)
-    #    #local army = self:GetArmy()
+    #    #local army = self.Army
     #    #for i in self.FxTrails do
     #    #    CreateEmitterOnEntity(self, army, self.FxTrails[i]):ScaleEmitter(self.FxTrailScale):OffsetEmitter(0, 0, self.FxTrailOffset)
     #    #end
-    #    CreateEmitterAtBone( self, -1, self:GetArmy(), '/effects/emitters/mortar_munition_02_flare_emit.bp')
+    #    CreateEmitterAtBone( self, -1, self.Army, '/effects/emitters/mortar_munition_02_flare_emit.bp')
     #end,
 }
 TypeClass = TIFFragmentationShell01

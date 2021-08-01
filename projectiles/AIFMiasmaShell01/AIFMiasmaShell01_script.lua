@@ -21,7 +21,7 @@ AIFMiasmaShell01 = Class(AMiasmaProjectile) {
             self:PlaySound(bp.Impact)
         end
         
-		self:CreateImpactEffects( self:GetArmy(), self.FxImpactNone, self.FxNoneHitScale )
+		self:CreateImpactEffects( self.Army, self.FxImpactNone, self.FxNoneHitScale )
 		local x,y,z = self:GetVelocity()
 		local speed = utilities.GetVectorLength(Vector(x*10,y*10,z*10))
 		

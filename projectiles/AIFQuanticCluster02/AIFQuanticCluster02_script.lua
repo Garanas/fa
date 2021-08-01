@@ -5,7 +5,7 @@
 #**
 #**  Summary  :  Quantic Cluster Projectile script
 #**
-#**  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+#**  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 #****************************************************************************
 
 local EffectTemplate = import('/lua/EffectTemplates.lua')
@@ -20,7 +20,7 @@ AIFQuanticCluster02 = Class(import('/lua/aeonprojectiles.lua').AQuantumCluster) 
 
         # Split effects
         for k, v in FxFragEffect do
-            CreateEmitterAtEntity( self, self:GetArmy(), v )
+            CreateEmitterAtEntity( self, self.Army, v )
         end
 
         local vx, vy, vz = self:GetVelocity()

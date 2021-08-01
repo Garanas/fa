@@ -5,7 +5,7 @@
 #**
 #**  Summary  :  Inferno Experimental Stragetic Bomb, XSA0402
 #**
-#**  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+#**  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 #****************************************************************************
 
 local SExperimentalStrategicBomb = import('/lua/seraphimprojectiles.lua').SExperimentalStrategicBomb
@@ -17,7 +17,7 @@ SBOInfernoExperimentalStrategicBomb01 = Class(SExperimentalStrategicBomb) {
     OnImpact = function(self, TargetType, TargetEntity)
         if not TargetEntity or not EntityCategoryContains(categories.PROJECTILE, TargetEntity) then
             # Play the explosion sound
-            local myBlueprint = self:GetBlueprint()
+            local myBlueprint = self.Blueprint
             if myBlueprint.Audio.Explosion then
                 self:PlaySound(myBlueprint.Audio.Explosion)
             end

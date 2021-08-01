@@ -5,7 +5,7 @@
 #**
 #**  Summary  :  Brackman Hack Peg-Pod
 #**
-#**  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+#**  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 #****************************************************************************
 
 local EffectTemplate = import('/lua/EffectTemplates.lua')
@@ -23,7 +23,7 @@ CIFBrackmanHackPegs01 = Class(CDFBrackmanHackPegProjectile01) {
               
         ### Play split effects
         for k, v in FxFragEffect do
-            CreateEmitterAtEntity( self, self:GetArmy(), v )
+            CreateEmitterAtEntity( self, self.Army, v )
         end
         
         local vx, vy, vz = self:GetVelocity()
