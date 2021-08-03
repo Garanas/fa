@@ -54,7 +54,7 @@ URS0201 = Class(CSeaUnit) {
     end,
 
     LayerChangeTrigger = function(self, new, old)
-        local bp = self.Blueprint
+        local bp = self.Blueprint or self:GetBlueprint()
         -- Enable sonar on water only, apply speed multiplier on land
         if new == 'Land' then
             self:DisableUnitIntel('Layer', 'Sonar')
