@@ -28,7 +28,7 @@ local Thread = function(self)
         WaitTicks(Random(3,4))
 
         local pos = EntityGetPosition(self)
-        MetaImpact(self, pos, 2, 2)
+        self.MetaImpact(self, pos, 2, 2)
 
         local army = self.Army
         local fxMeta = self.FxMeta
