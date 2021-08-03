@@ -8,6 +8,6 @@
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
-SDFHeavyPhasicAutogun01 = Class(import('/lua/seraphimprojectiles.lua').SHeavyPhasicAutogun) {
-}
+local SHeavyPhasicAutogun = import('/lua/seraphimprojectiles.lua').SHeavyPhasicAutogun
+SDFHeavyPhasicAutogun01 = Class(SHeavyPhasicAutogun) { }
 TypeClass = SDFHeavyPhasicAutogun01

@@ -8,6 +8,6 @@
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
-SAALosaareAutoCannon03 = Class(import('/lua/seraphimprojectiles.lua').SLosaareAAAutoCannon02) {
-}
+local SLosaareAAAutoCannon02 = import('/lua/seraphimprojectiles.lua').SLosaareAAAutoCannon02
+SAALosaareAutoCannon03 = Class(SLosaareAAAutoCannon02) { }
 TypeClass = SAALosaareAutoCannon03

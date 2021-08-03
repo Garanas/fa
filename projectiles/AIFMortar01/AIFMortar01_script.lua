@@ -2,22 +2,34 @@
 -- Aeon T1 Artillery Mortar : ual0103
 --
 local AArtilleryProjectile = import('/lua/aeonprojectiles.lua').AArtilleryProjectile
-local EffectTemplate = import('/lua/EffectTemplates.lua')
+local ALightMortarHit01 = import('/lua/EffectTemplates.lua').ALightMortarHit01
+local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
+
+-- globals as upvalues for performance 
+local DamageArea = DamageArea
+local CreateDecal = CreateDecal
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
+-- attach for CTRL + SHIFT F replacement
 
 AIFMortar01 = Class(AArtilleryProjectile) {
     OnImpact = function(self, targetType, targetEntity)
-        local pos = self:GetPosition()
-        local radius = self.DamageData.DamageRadius
-        local FriendlyFire = self.DamageData.DamageFriendly
+        local pos = EntityGetPosition(self)
+
+        local damageData = self.DamageData
+        local radius = damageData.DamageRadius
+        local FriendlyFire = damageData.DamageFriendly
         
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        damageData.DamageAmount = damageData.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
-            local rotation = RandomFloat(0,2*math.pi)
+            local rotation = RandomFloat(0,2*3.141592)
             local army = self.Army
             
             CreateDecal(pos, rotation, 'crater_radial01_albedo', '', 'Albedo', radius, radius, 100, 10, army)
@@ -26,9 +38,9 @@ AIFMortar01 = Class(AArtilleryProjectile) {
         AArtilleryProjectile.OnImpact(self, targetType, targetEntity)
     end,
     
-    FxImpactLand = EffectTemplate.ALightMortarHit01,
-    FxImpactProp = EffectTemplate.ALightMortarHit01,
-    FxImpactUnit = EffectTemplate.ALightMortarHit01,
+    FxImpactLand = ALightMortarHit01,
+    FxImpactProp = ALightMortarHit01,
+    FxImpactUnit = ALightMortarHit01,
 }
 
 TypeClass = AIFMortar01

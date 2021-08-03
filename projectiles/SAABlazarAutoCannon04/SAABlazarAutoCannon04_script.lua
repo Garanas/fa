@@ -8,6 +8,6 @@
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
-SAABlazarAutoCannon04 = Class(import('/lua/seraphimprojectiles.lua').SBlazarAAAutoCannon) {
-}
+local SBlazarAAAutoCannon = import('/lua/seraphimprojectiles.lua').SBlazarAAAutoCannon
+SAABlazarAutoCannon04 = Class(SBlazarAAAutoCannon) { }
 TypeClass = SAABlazarAutoCannon04

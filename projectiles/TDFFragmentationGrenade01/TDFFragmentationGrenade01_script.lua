@@ -5,27 +5,41 @@
 --
 --  Summary  :  UEF Fragmentation Shells, DEL0204 : mongoose
 --
---  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+--  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 ------------------------------------------------------------
 
+local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
 local TFragmentationGrenade = import('/lua/terranprojectiles.lua').TFragmentationGrenade
-local DefaultProjectileFile = import('/lua/sim/defaultprojectiles.lua')
-local EmitterProjectile = DefaultProjectileFile.EmitterProjectile
+local EmitterProjectile = import('/lua/sim/defaultprojectiles.lua').EmitterProjectile
+
+-- globals as upvalues for performance 
+local DamageArea = DamageArea
+local DamageRing = DamageRing
+local CreateDecal = CreateDecal
+local EntityCategoryContains = EntityCategoryContains
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
+-- attach for CTRL + SHIFT F replacement
 
 TDFFragmentationGrenade01 = Class(TFragmentationGrenade) {
     OnImpact = function(self, targetType, targetEntity)
-        local pos = self:GetPosition()
-        local radius = self.DamageData.DamageRadius
-        local FriendlyFire = self.DamageData.DamageFriendly
+        local pos = EntityGetPosition(self)
+
+        local data = self.DamageData
+        local radius = data.DamageRadius
+        local FriendlyFire = data.DamageFriendly
         
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
 
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        data.DamageAmount = data.DamageAmount - 2
 
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
-            local rotation = RandomFloat(0,2*math.pi)
+
+            local rotation = RandomFloat(0,2*3.141592)
             local army = self.Army
 
             DamageRing( self, pos, radius, 5/4 * radius, 1, 'Fire', FriendlyFire )

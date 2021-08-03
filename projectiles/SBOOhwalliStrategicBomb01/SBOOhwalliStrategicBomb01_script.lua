@@ -5,23 +5,37 @@
 --
 --  Summary  :  Ohwalli-Strategic Bomb script, used on XSA402
 --
---  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+--  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 -------------------------------------------------------------------------------
 local SOhwalliStrategicBombProjectile = import('/lua/seraphimprojectiles.lua').SOhwalliStrategicBombProjectile
 
+-- globals as upvalues for performance 
+local DamageArea = DamageArea
+local CreateDecal = CreateDecal
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+local EntityCreateProjectile = EntityMethods.CreateProjectile
+
+-- attach for CTRL + SHIFT F replacement
+
 SBOOhwalliStategicBomb01 = Class(SOhwalliStrategicBombProjectile){
     OnImpact = function(self, targetType, targetEntity)
-        local pos = self:GetPosition()
-        local radius = self.DamageData.DamageRadius
-        local FriendlyFire = self.DamageData.DamageFriendly
+        local pos = EntityGetPosition(self)
+
+        local data = self.DamageData
+        local radius = data.DamageRadius
+        local FriendlyFire = data.DamageFriendly
         
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
 
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        data.DamageAmount = data.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            self:CreateProjectile('/effects/entities/SBOOhwalliBombEffectController01/SBOOhwalliBombEffectController01_proj.bp', 0, 0, 0, 0, 0, 0):SetCollision(false)
+            local proj = EntityCreateProjectile(self, '/effects/entities/SBOOhwalliBombEffectController01/SBOOhwalliBombEffectController01_proj.bp', 0, 0, 0, 0, 0, 0)
+            ProjectileSetCollision(proj, false)
         end
         SOhwalliStrategicBombProjectile.OnImpact(self, targetType, targetEntity)
     end,

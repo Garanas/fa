@@ -6,39 +6,55 @@
 --  Summary  :  Suthanus Artillery Shell Projectile script
 --              Seraphim T3 Static Artillery : XSB2302
 --
---  Copyright © 2007 Gas Powered Games, Inc.  All rights reserved.
+--  Copyright ï¿½ 2007 Gas Powered Games, Inc.  All rights reserved.
 ------------------------------------------------------------
 
 local SSuthanusArtilleryShell = import('/lua/seraphimprojectiles.lua').SSuthanusArtilleryShell
 local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
 
+-- globals as upvalues for performance 
+local DamageArea = DamageArea
+local CreateDecal = CreateDecal
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileShakeCamera = ProjectileMethods.ShakeCamera
+
+-- attach for CTRL + SHIFT F replacement
+
 SIFSuthanusArtilleryShell02 = Class(SSuthanusArtilleryShell) {
     OnImpact = function(self, targetType, targetEntity)
-        local pos = self:GetPosition()
-        local radius = self.DamageData.DamageRadius
-        local FriendlyFire = self.DamageData.DamageFriendly
+        local pos = EntityGetPosition(self)
+
+        local army = self.Army
+        local data = self.DamageData
+        local radius = data.DamageRadius
+        local FriendlyFire = data.DamageFriendly
         
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
 
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        data.DamageAmount = data.DamageAmount - 2
         
         -- if targetType == 'Shield' and self.Data then
-            -- DamageArea(self, pos, radius, self.DamageData.DamageAmount, self.DamageData.DamageType, self.DamageData.DamageFriendly)
-            -- self.DamageData.DamageAmount = self.Data - self.DamageData.DamageAmount
+            -- DamageArea(self, pos, radius, data.DamageAmount, data.DamageType, data.DamageFriendly)
+            -- data.DamageAmount = self.Data - data.DamageAmount
             -- radius = 0
         -- end
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local rotation = RandomFloat(0,2*math.pi)
-            local army = self.Army
+            local rotation = RandomFloat(0,2*3.141592)
+
             
             CreateDecal(pos, rotation, 'crater_radial01_normals', '', 'Alpha Normals', radius+3, radius+3, 250, 200, army)
             CreateDecal(pos, rotation, 'crater_radial01_albedo', '', 'Albedo', radius+7, radius+7, 250, 200, army)
         
         end
         
-        self:ShakeCamera(20, 2, 0, 1)
+        ProjectileShakeCamera(self, 20, 2, 0, 1)
 
         SSuthanusArtilleryShell.OnImpact(self, targetType, targetEntity)
     end,

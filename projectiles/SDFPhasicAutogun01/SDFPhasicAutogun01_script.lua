@@ -8,6 +8,6 @@
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
-SDFPhasicAutogun01 = Class(import('/lua/seraphimprojectiles.lua').SPhasicAutogun) {
-}
+local SPhasicAutogun = import('/lua/seraphimprojectiles.lua').SPhasicAutogun
+SDFPhasicAutogun01 = Class(SPhasicAutogun) { }
 TypeClass = SDFPhasicAutogun01

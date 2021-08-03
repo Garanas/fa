@@ -10,53 +10,68 @@
 
 local SLaanseTacticalMissile = import('/lua/seraphimprojectiles.lua').SLaanseTacticalMissile
 
+-- globals as upvalues for performance 
+local VDist2Sq = VDist2Sq
+local ForkThread = ForkThread
+local WaitSeconds = WaitSeconds
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+local EntityBeenDestroyed = EntityMethods.BeenDestroyed
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetCollisionShape = ProjectileMethods.SetCollisionShape
+local ProjectileSetTurnRate = ProjectileMethods.SetTurnRate
+local ProjectileGetCurrentTargetPosition = ProjectileMethods.GetCurrentTargetPosition
+
+-- attach for CTRL + SHIFT F replacement
+
+local GetSquaredDistanceToTarget = function(self)
+    local tpos = ProjectileGetCurrentTargetPosition(self)
+    local mpos = EntityGetPosition(self)
+    return VDist2Sq(mpos[1], mpos[3], tpos[1], tpos[3])
+end
+
+local SetTurnRateByDist = function(self)
+    local dist = GetSquaredDistanceToTarget(self)
+    --Get the nuke as close to 90 deg as possible
+    if dist > 50 * 50 then        
+        --Freeze the turn rate as to prevent steep angles at long distance targets
+        WaitSeconds(2)
+        ProjectileSetTurnRate(self, 20)
+    elseif dist > 64 * 64 and dist <= 107 * 107 then
+        -- Increase check intervals
+        ProjectileSetTurnRate(self, 30)
+        WaitSeconds(1.5)
+        ProjectileSetTurnRate(self, 30)
+    elseif dist > 21 * 21 and dist <= 53 * 53 then
+        -- Further increase check intervals
+        WaitSeconds(0.3)
+        ProjectileSetTurnRate(self, 50)
+    elseif dist > 0 and dist <= 21 * 21 then
+        -- Further increase check intervals            
+        ProjectileSetTurnRate(self, 100)   
+        KillThread(self.MoveThread)         
+    end
+end
+
+local MovementThread = function(self)        
+    local waitTime = 0.1
+    ProjectileSetTurnRate(self, 8)
+    WaitSeconds(0.3)        
+    while not EntityBeenDestroyed(self) do
+        SetTurnRateByDist(self)
+        WaitSeconds(waitTime)
+    end
+end
+
 SIFLaanseTacticalMissile03 = Class(SLaanseTacticalMissile) {
-    
     OnCreate = function(self)
         SLaanseTacticalMissile.OnCreate(self)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 2.0)
-        self:ForkThread( self.MovementThread )
-    end,
-
-    MovementThread = function(self)        
-        self.WaitTime = 0.1
-        self:SetTurnRate(8)
-        WaitSeconds(0.3)        
-        while not self:BeenDestroyed() do
-            self:SetTurnRateByDist()
-            WaitSeconds(self.WaitTime)
-        end
-    end,
-
-    SetTurnRateByDist = function(self)
-        local dist = self:GetDistanceToTarget()
-        --Get the nuke as close to 90 deg as possible
-        if dist > 50 then        
-            --Freeze the turn rate as to prevent steep angles at long distance targets
-            WaitSeconds(2)
-            self:SetTurnRate(20)
-        elseif dist > 64 and dist <= 107 then
-						-- Increase check intervals
-						self:SetTurnRate(30)
-						WaitSeconds(1.5)
-            self:SetTurnRate(30)
-        elseif dist > 21 and dist <= 53 then
-						-- Further increase check intervals
-            WaitSeconds(0.3)
-            self:SetTurnRate(50)
-				elseif dist > 0 and dist <= 21 then
-						-- Further increase check intervals            
-            self:SetTurnRate(100)   
-            KillThread(self.MoveThread)         
-        end
-    end,        
-
-    GetDistanceToTarget = function(self)
-        local tpos = self:GetCurrentTargetPosition()
-        local mpos = self:GetPosition()
-        local dist = VDist2(mpos[1], mpos[3], tpos[1], tpos[3])
-        return dist
-    end,
+        ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 2.0)
+        ForkThread( MovementThread , self)
+    end,       
 }
 TypeClass = SIFLaanseTacticalMissile03
 

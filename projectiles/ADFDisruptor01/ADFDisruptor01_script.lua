@@ -1,7 +1,8 @@
 --
 -- Aeon Disruptor Projectile
 --
-ADFDisruptor01 = Class(import('/lua/aeonprojectiles.lua').ADisruptorProjectile) { }
 
+local ADisruptorProjectile = import('/lua/aeonprojectiles.lua').ADisruptorProjectile
+ADFDisruptor01 = Class(ADisruptorProjectile) { }
 TypeClass = ADFDisruptor01
 

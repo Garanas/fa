@@ -11,6 +11,25 @@ local EffectTemplate = import('/lua/EffectTemplates.lua')
 local AArtilleryFragmentationSensorShellProjectile = import('/lua/aeonprojectiles.lua').AArtilleryFragmentationSensorShellProjectile
 local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
 
+-- globals as upvalues for performance 
+local CreateEmitterAtBone = CreateEmitterAtBone
+
+-- math functions as upvalues for performance
+local MathSin = _G.math.sin
+local MathCos = _G.math.cos 
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+local EntityDestroy = EntityMethods.Destroy
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileGetVelocity = ProjectileMethods.GetVelocity
+local ProjectileSetVelocity = ProjectileMethods.SetVelocity
+local ProjectileCreateChildProjectile = ProjectileMethods.CreateChildProjectile
+
+-- attach for CTRL + SHIFT F replacement
+
 AIFFragmentationSensorShell01 = Class(AArtilleryFragmentationSensorShellProjectile) {
                
     OnImpact = function(self, TargetType, TargetEntity) 
@@ -22,15 +41,18 @@ AIFFragmentationSensorShell01 = Class(AArtilleryFragmentationSensorShellProjecti
             CreateEmitterAtBone( self, -1, self.Army, v )
         end
         
-        local vx, vy, vz = self:GetVelocity()
+        local vx, vy, vz = ProjectileGetVelocity(self)
         local velocity = 16
 
 		-- One initial projectile following same directional path as the original
-        self:CreateChildProjectile(bp.FragmentId):SetVelocity(vx,0.8*vy, vz):SetVelocity(velocity):PassDamageData(self.DamageData)
+        local proj = ProjectileCreateChildProjectile(self, bp.FragmentId)
+        ProjectileSetVelocity(proj, vx,0.8*vy, vz)
+        ProjectileSetVelocity(velocity)
+        proj.PassDamageData(proj, self.DamageData)
    		
 		-- Create several other projectiles in a dispersal pattern
         local numProjectiles = bp.Fragments - 1
-        local angle = (2 * math.pi) / numProjectiles
+        local angle = (2 * 3.141592) / numProjectiles
         local angleInitial = RandomFloat( 0, angle )
         
         -- Randomization of the spread
@@ -43,14 +65,14 @@ AIFFragmentationSensorShell01 = Class(AArtilleryFragmentationSensorShellProjecti
 
         -- Launch projectiles at semi-random angles away from split location
         for i = 0, numProjectiles - 1 do
-            xVec = vx + (math.sin(angleInitial + (i*angle) + RandomFloat(-angleVariation, angleVariation))) * spreadMul
-            zVec = vz + (math.cos(angleInitial + (i*angle) + RandomFloat(-angleVariation, angleVariation))) * spreadMul 
-            local proj = self:CreateChildProjectile(bp.FragmentId)
-            proj:SetVelocity(xVec,yVec,zVec)
-            proj:SetVelocity(velocity)
-            proj:PassDamageData(self.DamageData)                        
+            xVec = vx + (MathSin(angleInitial + (i*angle) + RandomFloat(-angleVariation, angleVariation))) * spreadMul
+            zVec = vz + (MathCos(angleInitial + (i*angle) + RandomFloat(-angleVariation, angleVariation))) * spreadMul 
+            local proj = ProjectileCreateChildProjectile(self, bp.FragmentId)
+            ProjectileSetVelocity(proj, xVec,yVec,zVec)
+            ProjectileSetVelocity(proj, velocity)
+            proj.PassDamageData(proj, self.DamageData)                        
         end
-        local pos = self:GetPosition()
+        local pos = EntityGetPosition(self)
         local spec = {
             X = pos[1],
             Z = pos[3],
@@ -60,7 +82,7 @@ AIFFragmentationSensorShell01 = Class(AArtilleryFragmentationSensorShellProjecti
             Omni = false,
             WaterVision = false,
         }
-        self:Destroy()
+        EntityDestroy(self)
     end,
 }
 TypeClass = AIFFragmentationSensorShell01

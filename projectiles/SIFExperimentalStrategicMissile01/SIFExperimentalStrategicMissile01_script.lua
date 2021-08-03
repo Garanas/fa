@@ -6,6 +6,16 @@
 ---------------------------------------------------------------------------------------------------------------
 local SExperimentalStrategicMissile = import('/lua/seraphimprojectiles.lua').SExperimentalStrategicMissile
 
+-- global functions as upvalue for performance
+local EntityCategoryContains = EntityCategoryContains
+local Warp = Warp
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
+-- attach for CTRL + SHIFT F replacement
+
 SIFExperimentalStrategicMissile01 = Class(SExperimentalStrategicMissile) {
     FxSplashScale = 0.5,
 
@@ -38,7 +48,7 @@ SIFExperimentalStrategicMissile01 = Class(SExperimentalStrategicMissile) {
     OnImpact = function(self, TargetType, TargetEntity)
         SExperimentalStrategicMissile.OnImpact(self, TargetType, TargetEntity)
         if not TargetEntity or not EntityCategoryContains(categories.PROJECTILE, TargetEntity) then
-            local pos = self:GetPosition()
+            local pos = EntityGetPosition(self)
             pos[2] = pos[2] + 20
             Warp(self.effectEntity, pos)
         end

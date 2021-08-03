@@ -1,23 +1,37 @@
 --
 -- Terran T1 Artillery Fragmentation/Sensor Shells : uel0103
 --
+
 local TArtilleryProjectile = import('/lua/terranprojectiles.lua').TArtilleryProjectile
+local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
 local EffectTemplate = import('/lua/EffectTemplates.lua')
+
+-- globals as upvalues for performance 
+local DamageArea = DamageArea
+local CreateDecal = CreateDecal
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
+-- attach for CTRL + SHIFT F replacement
 
 TIFFragmentationSensorShell02 = Class(TArtilleryProjectile) {
     OnImpact = function(self, targetType, targetEntity)
-        local pos = self:GetPosition()
-        local radius = self.DamageData.DamageRadius
-        local FriendlyFire = self.DamageData.DamageFriendly
+        local pos = EntityGetPosition(self)
+
+        local data = self.DamageData
+        local radius = data.DamageRadius
+        local FriendlyFire = data.DamageFriendly
         
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        data.DamageAmount = data.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
-            local rotation = RandomFloat(0,2*math.pi)
+
+            local rotation = RandomFloat(0,2*3.141592)
             local army = self.Army
         
             CreateDecal(pos, rotation, 'scorch_001_albedo', '', 'Albedo', radius, radius, 100, 10, army)
@@ -30,15 +44,6 @@ TIFFragmentationSensorShell02 = Class(TArtilleryProjectile) {
     FxTrails     = EffectTemplate.TFragmentationSensorShellTrail,
     FxImpactUnit = EffectTemplate.TFragmentationSensorShellHit,
     FxImpactLand = EffectTemplate.TFragmentationSensorShellHit,
-    
-    -- OnCreate = function(self)
-        -- TArtilleryProjectile.OnCreate(self)
-           -- local army = self.Army
-           -- for i in self.FxTrails do
-               -- CreateEmitterOnEntity(self, army, self.FxTrails[i]):ScaleEmitter(self.FxTrailScale):OffsetEmitter(0, 0, self.FxTrailOffset)
-           -- end
-        -- CreateEmitterAtBone( self, -1, self.Army, '/effects/emitters/mortar_munition_02_flare_emit.bp')
-    -- end,
 }
 
 TypeClass = TIFFragmentationSensorShell02

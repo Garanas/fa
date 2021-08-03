@@ -5,25 +5,38 @@
 --
 --  Summary  :  Cybran Neutron Cluster bomb
 --
---  Copyright © 2005 Gas Powered Games, Inc.  All rights reserved.
+--  Copyright ï¿½ 2005 Gas Powered Games, Inc.  All rights reserved.
 -------------------------------------------------------------------------------
 
 local CNeutronClusterBombProjectile = import('/lua/cybranprojectiles.lua').CNeutronClusterBombProjectile
+local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
+
+-- globals as upvalues for performance 
+local DamageArea = DamageArea
+local CreateDecal = CreateDecal
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
+-- attach for CTRL + SHIFT F replacement
 
 CIFNeutronClusterBomb01 = Class(CNeutronClusterBombProjectile) {
     OnImpact = function(self, targetType, targetEntity)
-        local pos = self:GetPosition()
-        local radius = self.DamageData.DamageRadius
-        local FriendlyFire = self.DamageData.DamageFriendly
+        local pos = EntityGetPosition(self)
+
+        local damageData = self.DamageData
+        local radius = damageData.DamageRadius
+        local FriendlyFire = damageData.DamageFriendly
         
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
 
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        damageData.DamageAmount = damageData.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
-            local rotation = RandomFloat(0,2*math.pi)
+
+            local rotation = RandomFloat(0,2*3.141592)
             local size = radius-1.5 + RandomFloat(0,1.0)
             local army = self.Army
 

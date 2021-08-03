@@ -9,11 +9,16 @@
 --****************************************************************************
 
 local CDFHvyProtonCannonProjectile = import('/lua/cybranprojectiles.lua').CDFHvyProtonCannonProjectile
+
+-- moho functions as upvalue for performance
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileShakeCamera = ProjectileMethods.ShakeCamera
+
 CDFProtonCannon05 = Class(CDFHvyProtonCannonProjectile) {
 	OnImpact = function(self, TargetType, TargetEntity) 
-		------self:ShakeCamera( radius, maxShakeEpicenter, minShakeAtRadius, interval )
-		self:ShakeCamera( 15, 0.25, 0, 0.2 )
+		ProjectileShakeCamera(self,  15, 0.25, 0, 0.2 )
 		CDFHvyProtonCannonProjectile.OnImpact (self, TargetType, TargetEntity)
 	end,
 }
+
 TypeClass = CDFProtonCannon05

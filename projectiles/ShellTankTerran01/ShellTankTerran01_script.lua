@@ -2,6 +2,46 @@
 -- script for projectile TankShell
 --
 local Projectile = import('/lua/sim/Projectile.lua').Projectile
+
+-- globals as upvalues for performance 
+local Random = Random
+local ForkThread = ForkThread
+local WaitTicks = WaitTicks
+local CreateSplat = CreateSplat
+local CreateEmitterAtEntity = CreateEmitterAtEntity
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileShakeCamera = ProjectileMethods.ShakeCamera
+
+local EmitterMethods = _G.moho.IEffect
+local EmitterScaleEmitter = EmitterMethods.ScaleEmitter
+
+-- attach for CTRL + SHIFT F replacement
+
+local Thread = function(self)
+    WaitTicks(5)
+    while true do
+        WaitTicks(Random(3,4))
+
+        local pos = EntityGetPosition(self)
+        MetaImpact(self, pos, 2, 2)
+
+        local army = self.Army
+        local fxMeta = self.FxMeta
+        for k, v in fxMeta do
+            local emit = CreateEmitterAtEntity(self, army, v):
+            EmitterScaleEmitter(emit, 0.4)
+        end
+
+        ProjectileShakeCamera(self, 5, 1, 0, 0.1)
+        CreateSplat(pos ,0,'scorch_001_albedo', 1, 1, 200, 500, army)
+    end
+end
+
 ShellTankTerran01 = Class(Projectile) {
     FxUnitHitScale = 1,
     FxImpactUnit = {},
@@ -28,26 +68,7 @@ ShellTankTerran01 = Class(Projectile) {
 
     OnCreate = function(self)
         Projectile.OnCreate(self)
-        self:ForkThread(self.Thread)
-    end,
-
-    Thread = function(self)
-        WaitTicks(5)
-        while true do
-            WaitTicks(Random(3,4))
-
-            local x, y, z = unpack(self:GetPosition())
-            --y = y - 1
-            --local offsetx = Random(1.0, 2.0) - 1
-            --x = x + offsetx
-            MetaImpact(self, Vector(x, y, z), 2, 2)
-            local army = self.Army
-            for k, v in self.FxMeta do
-                CreateEmitterAtEntity(self,army,v):ScaleEmitter(0.4)--:OffsetEmitter(0, 0, offsetx)
-            end
-            self:ShakeCamera(5, 1, 0, 0.1)
-            CreateSplat(self:GetPosition(),0,'scorch_001_albedo', 1, 1, 200, 500, army)
-        end
+        ForkThread(Thread, self)
     end,
 }
 

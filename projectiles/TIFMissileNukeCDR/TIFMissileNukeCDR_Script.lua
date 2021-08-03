@@ -4,6 +4,25 @@
 
 local TIFMissileNuke = import('/lua/terranprojectiles.lua').TIFMissileNuke
 
+-- globals as upvalues for performance 
+local Damage = Damage
+local DamageArea = DamageArea
+local WaitSeconds = WaitSeconds
+local EntityCategoryContains = EntityCategoryContains
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityDestroy = EntityMethods.Destroy
+local EntityBeenDestroyed = EntityMethods.BeenDestroyed
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetTurnRate = ProjectileMethods.SetTurnRate
+local ProjectileGetTrackingTarget = ProjectileMethods.GetTrackingTarget
+
+-- attach for CTRL + SHIFT F replacement
+
+local OnImpactAeonTMD = categories.AEON * categories.PROJECTILE * categories.ANTIMISSILE * categories.TECH_TWO
+
 TIFMissileNukeCDR = Class(TIFMissileNuke) {
 
     BeamName = '/effects/emitters/missile_exhaust_fire_beam_06_emit.bp',
@@ -21,28 +40,28 @@ TIFMissileNukeCDR = Class(TIFMissileNuke) {
     end,
 
     OnImpact = function(self, TargetType, TargetEntity)
-        if EntityCategoryContains(categories.AEON * categories.PROJECTILE * categories.ANTIMISSILE * categories.TECH_TWO, TargetEntity) then
-            self:Destroy()
+        if EntityCategoryContains(OnImpactAeonTMD, TargetEntity) then
+            EntityDestroy(self)
         else
-
             TIFMissileNuke.OnImpact(self, TargetType, TargetEntity)
         end
     end,
 
-    
     -- Tactical nuke has different flight path
     MovementThread = function(self)
-        local target = self:GetTrackingTarget()
-        local launcher = self:GetLauncher()
-        self.CreateEffects(self, self.InitialEffects, self.Army, 1)
-        self.WaitTime = 0.1
-        self:SetTurnRate(8)
+        local launcher = self.Launcher
+        local army = self.Army
+        local target = ProjectileGetTrackingTarget(self)
+
+        self.CreateEffects(self, self.InitialEffects, army, 1)
+        local waitTime
+        ProjectileSetTurnRate(self, 8)
         WaitSeconds(0.3)
-        self.CreateEffects(self, self.LaunchEffects, self.Army, 1)
-        self.CreateEffects(self, self.ThrustEffects, self.Army, 1)
-        while not self:BeenDestroyed() do
+        self.CreateEffects(self, self.LaunchEffects, army, 1)
+        self.CreateEffects(self, self.ThrustEffects, army, 1)
+        while not EntityBeenDestroyed(self) do
             self:SetTurnRateByDist()
-            WaitSeconds(self.WaitTime)
+            WaitSeconds(waitTime)
         end
     end,
 
@@ -53,6 +72,7 @@ TIFMissileNukeCDR = Class(TIFMissileNuke) {
             end
         end
 
+        -- TODO: ?, nukeDamage returns nil
         self.InnerRing.DoNukeDamage = nukeDamage
         self.OuterRing.DoNukeDamage = nukeDamage
         TIFMissileNuke.DoDamage(self, instigator, DamageData, targetEntity)
@@ -63,26 +83,26 @@ TIFMissileNukeCDR = Class(TIFMissileNuke) {
         if dist > 50 then
             -- Freeze the turn rate as to prevent steep angles at long distance targets
             WaitSeconds(2)
-            self:SetTurnRate(20)
+            ProjectileSetTurnRate(self, 20)
         elseif dist > 128 and dist <= 213 then
             -- Increase check intervals
-            self:SetTurnRate(30)
+            ProjectileSetTurnRate(self, 30)
             WaitSeconds(1.5)
-            self:SetTurnRate(30)
+            ProjectileSetTurnRate(self, 30)
         elseif dist > 43 and dist <= 107 then
             -- Further increase check intervals
             WaitSeconds(0.3)
-            self:SetTurnRate(75)
+            ProjectileSetTurnRate(self, 75)
         elseif dist > 0 and dist <= 43 then
             -- Further increase check intervals
-            self:SetTurnRate(200)
+            ProjectileSetTurnRate(self, 200)
             KillThread(self.MoveThread)
         end
     end,
 
     OnEnterWater = function(self)
         TIFMissileNuke.OnEnterWater(self)
-        self:SetDestroyOnWater(true)
+        ProjectileSetDestroyOnWater(self, true)
     end,
 }
 TypeClass = TIFMissileNukeCDR

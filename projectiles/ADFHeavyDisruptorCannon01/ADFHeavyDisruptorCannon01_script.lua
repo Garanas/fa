@@ -8,6 +8,6 @@
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
-ADFHeavyDisruptorCannon01 = Class(import('/lua/aeonprojectiles.lua').AHeavyDisruptorCannonShell) {
-}
+local AHeavyDisruptorCannonShell = import('/lua/aeonprojectiles.lua').AHeavyDisruptorCannonShell 
+ADFHeavyDisruptorCannon01 = Class(AHeavyDisruptorCannonShell) { }
 TypeClass = ADFHeavyDisruptorCannon01

@@ -8,6 +8,6 @@
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
-SAAOlarisAAArtillery05 = Class(import('/lua/seraphimprojectiles.lua').SOlarisAAArtillery) {
-}
+local SOlarisAAArtillery = import('/lua/seraphimprojectiles.lua').SOlarisAAArtillery
+SAAOlarisAAArtillery05 = Class(SOlarisAAArtillery) { }
 TypeClass = SAAOlarisAAArtillery05

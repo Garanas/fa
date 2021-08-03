@@ -1,6 +1,7 @@
 --
 -- Aeon Anti Air Projectile
 --
-AAASonicPulse01 = Class(import('/lua/aeonprojectiles.lua').ASonicPulseProjectile) { }
 
+local ASonicPulseProjectile = import('/lua/aeonprojectiles.lua').ASonicPulseProjectile
+AAASonicPulse01 = Class(ASonicPulseProjectile) { }
 TypeClass = AAASonicPulse01

@@ -2,20 +2,28 @@
 -- Terran Gauss Cannon Projectile
 --
 local TDFGaussCannonProjectile = import('/lua/terranprojectiles.lua').TDFGaussCannonProjectile
+
+-- globals as upvalues for performance 
+local ForkThread = ForkThread
+local WaitSeconds = WaitSeconds
+
+-- moho functions as upvalue for performance
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetDestroyOnWater = ProjectileMethods.SetDestroyOnWater
+
+local DestroyOnWaterThread = function(self)
+    WaitSeconds(0.2)
+    ProjectileSetDestroyOnWater(self, true)
+end
+
 TDFGauss01 = Class(TDFGaussCannonProjectile) {
-    
     OnCreate = function(self, inWater)
         TDFGaussCannonProjectile.OnCreate(self, inWater)
         if not inWater then
-            self:SetDestroyOnWater(true)
+            ProjectileSetDestroyOnWater(self, true)
         else
-            self:ForkThread(self.DestroyOnWaterThread)
+            ForkThread(DestroyOnWaterThread, self)
         end
-    end,
-    
-    DestroyOnWaterThread = function(self)
-        WaitSeconds(0.2)
-        self:SetDestroyOnWater(true)
     end,
 }
 TypeClass = TDFGauss01

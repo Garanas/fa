@@ -10,23 +10,35 @@
 
 local SExperimentalStrategicBomb = import('/lua/seraphimprojectiles.lua').SExperimentalStrategicBomb
 
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+local EntityPlaySound = EntityMethods.PlaySound
+local EntityCreateProjectile = EntityMethods.CreateProjectile
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetCollision = ProjectileMethods.SetCollision
+
+-- attach for CTRL + SHIFT F replacement
 
 SBOInfernoExperimentalStrategicBomb01 = Class(SExperimentalStrategicBomb) {
-
 
     OnImpact = function(self, TargetType, TargetEntity)
         if not TargetEntity or not EntityCategoryContains(categories.PROJECTILE, TargetEntity) then
             -- Play the explosion sound
             local myBlueprint = self.Blueprint
             if myBlueprint.Audio.Explosion then
-                self:PlaySound(myBlueprint.Audio.Explosion)
+                EntityPlaySound(self, myBlueprint.Audio.Explosion)
             end
     
-            nukeProjectile = self:CreateProjectile('/effects/entities/SeraphimNukeEffectController01/SeraphimNukeEffectController01_proj.bp', 0, 0, 0, nil, nil, nil):SetCollision(false)
-            local pos = self:GetPosition()
-            pos[2] = pos[2] + 20
-            Warp( nukeProjectile, pos)
-            nukeProjectile:PassData(self.Data)
+            local pos = EntityGetPosition(self)
+            nukeProjectile = EntityCreateProjectile(self, '/effects/entities/SeraphimNukeEffectController01/SeraphimNukeEffectController01_proj.bp', pos[1], pos[2] + 20, pos[3], nil, nil, nil)
+            ProjectileSetCollision(nukeProjectile, false)
+
+            -- pos[2] = pos[2] + 20
+            -- Warp( nukeProjectile, pos)
+
+            nukeProjectile.PassData(nukeProjectile, self.Data)
         end
         SExperimentalStrategicBomb.OnImpact(self, TargetType, TargetEntity)
     end,

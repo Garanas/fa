@@ -1,6 +1,7 @@
 --
 -- Cybran Anti Air Projectile
 --
-CAAAutocannon01 = Class(import('/lua/cybranprojectiles.lua').CShellAAAutoCannonProjectile) { }
 
+local CShellAAAutoCannonProjectile = import('/lua/cybranprojectiles.lua').CShellAAAutoCannonProjectile
+CAAAutocannon01 = Class(CShellAAAutoCannonProjectile) { }
 TypeClass = CAAAutocannon01

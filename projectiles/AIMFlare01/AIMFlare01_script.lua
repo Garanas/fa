@@ -10,30 +10,33 @@
 local Flare = import('/lua/defaultantiprojectile.lua').Flare
 local AIMFlareProjectile = import('/lua/aeonprojectiles.lua').AIMFlareProjectile
 
+-- moho functions as upvalue for performance
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetVelocity = ProjectileMethods.SetVelocity
+local ProjectileTrackTarget = ProjectileMethods.TrackTarget
+
+-- attach for CTRL + SHIFT F replacement
+
 AIMFlare01 = Class(AIMFlareProjectile) {
 
     OnCreate = function(self)
         AIMFlareProjectile.OnCreate(self)
-        --LOG('*DEBUG: FLARE CREATED')
-        --self:SetCollisionShape('Sphere', 0, 0, 0, self.Blueprint.Physics.FlareRadius)
 
         self.MyShield = Flare {
             Owner = self,
             Radius = self.Blueprint.Physics.FlareRadius,
         }
         self.Trash:Add(self.MyShield)
-        self:TrackTarget(false)
-        self:SetVelocity(0, -1, 0)
+        ProjectileTrackTarget(self, false)
+        ProjectileSetVelocity(self, 0, -1, 0)
     end,
 
     -- We only destroy when we hit the ground/water.
     OnImpact = function(self,type,other)
         if type == 'Terrain' or type == 'Water' then
-            --LOG('*DEBUG FLARE IMPACT ', repr(type))
             AIMFlareProjectile.OnImpact(self,type,other)
         end
     end,
 }
 
 TypeClass = AIMFlare01
-

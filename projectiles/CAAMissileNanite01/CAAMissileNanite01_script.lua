@@ -1,26 +1,37 @@
 --
 -- AA Missile for Cybrans
 --
+
 local CAAMissileNaniteProjectile = import('/lua/cybranprojectiles.lua').CAAMissileNaniteProjectile
+
+-- globals as upvalues for performance 
+local ForkThread = ForkThread
+local WaitSeconds = WaitSeconds
+local Random = Random
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetAcceleration = ProjectileMethods.SetAcceleration
+local ProjectileSetMaxSpeed = ProjectileMethods.SetMaxSpeed
+local ProjectileChangeMaxZigZag = ProjectileMethods.ChangeMaxZigZag
+local ProjectileChangeZigZagFrequency = ProjectileMethods.ChangeZigZagFrequency
+
+-- attach for CTRL + SHIFT F replacement
+
+local UpdateThread = function(self)
+    WaitSeconds(1.5)
+    ProjectileSetMaxSpeed(self, 80)
+    ProjectileSetAcceleration(self, 10 + Random() * 8)
+    ProjectileChangeMaxZigZag(self, 0.5)
+    ProjectileChangeZigZagFrequency(self, 2)
+end
+
 CAAMissileNanite01 = Class(CAAMissileNaniteProjectile) {
 
     OnCreate = function(self)
         CAAMissileNaniteProjectile.OnCreate(self)
-        self:ForkThread(self.UpdateThread)
+        ForkThread(UpdateThread, self)
     end,
 
-    UpdateThread = function(self)
-        WaitSeconds(1.5)
-        self:SetMaxSpeed(80)
-        self:SetAcceleration(10 + Random() * 8)
-        self:ChangeMaxZigZag(0.5)
-        self:ChangeZigZagFrequency(2)
-    end,
-
-    OnImpact = function(self, TargetType, TargetEntity)
-        CAAMissileNaniteProjectile.OnImpact(self, TargetType, TargetEntity)
-    end,
 }
 
 TypeClass = CAAMissileNanite01
-

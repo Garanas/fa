@@ -7,8 +7,7 @@
 --**
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
-local TTorpedoSubProjectile = import('/lua/terranprojectiles.lua').TTorpedoSubProjectile
 
-TANAnglerTorpedo05 = Class(TTorpedoSubProjectile) {
-}
+local TTorpedoSubProjectile = import('/lua/terranprojectiles.lua').TTorpedoSubProjectile
+TANAnglerTorpedo05 = Class(TTorpedoSubProjectile) { }
 TypeClass = TANAnglerTorpedo05

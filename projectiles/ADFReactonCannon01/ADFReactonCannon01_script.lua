@@ -10,10 +10,16 @@
 
 local AReactonCannonProjectile = import('/lua/aeonprojectiles.lua').AReactonCannonProjectile
 
+-- globals as upvalues for performance 
+local CreateLightParticle = CreateLightParticle
+local CreateEmitterAtEntity = CreateEmitterAtEntity
+
+-- attach for CTRL + SHIFT F replacement
+
 ADFReactonCannon01 = Class(AReactonCannonProjectile) {
     CreateImpactEffects = function(self, army, EffectTable, EffectScale)
-        local launcher = self:GetLauncher()
-        if launcher and launcher:HasEnhancement('StabilitySuppressant') then
+        local launcher = self.Launcher
+        if launcher and launcher.HasEnhancement(launcher, 'StabilitySuppressant') then
             CreateLightParticle(self, -1, army, 3.0, 6, 'ring_05', 'ramp_green_02')
             CreateEmitterAtEntity(self,army,'/effects/emitters/oblivion_cannon_hit_11_emit.bp')
         end

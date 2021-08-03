@@ -2,17 +2,21 @@
 -- Seraphim Energy Being Laser
 --
 local SEnergyLaser = import('/lua/seraphimprojectiles.lua').SEnergyLaser
-SDFEnergyLaser01 = Class(SEnergyLaser) {
 
+-- moho functions as upvalue for performance
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetAcceleration = ProjectileMethods.SetAcceleration
+
+local MovementThread = function(self)
+	WaitSeconds(.2)
+	ProjectileSetAcceleration(self, 9999)
+end
+
+SDFEnergyLaser01 = Class(SEnergyLaser) {
     OnCreate = function(self)
-    	  SEnergyLaser.OnCreate(self)
-        self:ForkThread( self.MovementThread )
+    	SEnergyLaser.OnCreate(self)
+        ForkThread( MovementThread , self)
     end,
-	
-	  MovementThread = function(self)
-	  	  WaitSeconds(.2)
-	  	  self:SetAcceleration(9999)
-	  end,
 }
 
 TypeClass = SDFEnergyLaser01

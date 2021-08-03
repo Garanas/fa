@@ -3,24 +3,32 @@
 --
 local CTorpedoSubProjectile = import('/lua/cybranprojectiles.lua').CTorpedoSubProjectile
 
+-- moho functions as upvalue for performance
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetTurnRate = ProjectileMethods.SetTurnRate
+local ProjectileTrackTarget = ProjectileMethods.TrackTarget
+local ProjectileSetBallisticAcceleration = ProjectileMethods.SetBallisticAcceleration
+
+-- attach for CTRL + SHIFT F replacement
+
 CANTorpedoNanite01 = Class(CTorpedoSubProjectile) {
 
 	OnCreate = function(self, inWater)
         CTorpedoSubProjectile.OnCreate(self, inWater)
         if inWater then
-            self:SetBallisticAcceleration(0)
+            ProjectileSetBallisticAcceleration(self, 0)
         else
-            self:SetBallisticAcceleration(-20)
-            self:TrackTarget(false)
-            self:SetTurnRate(0)
+            ProjectileSetBallisticAcceleration(self, -20)
+            ProjectileTrackTarget(self, false)
+            ProjectileSetTurnRate(self, 0)
         end
     end,
     
     OnEnterWater = function(self)
         CTorpedoSubProjectile.OnEnterWater(self)
-        self:SetBallisticAcceleration(0)
-        self:SetTurnRate(120)
-        self:TrackTarget(true)
+        ProjectileSetBallisticAcceleration(self, 0)
+        ProjectileSetTurnRate(self, 120)
+        ProjectileTrackTarget(self, true)
     end,
 }
 

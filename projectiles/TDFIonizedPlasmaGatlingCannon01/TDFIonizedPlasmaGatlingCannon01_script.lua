@@ -7,6 +7,6 @@
 --**
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
-TDFIonizedPlasmaGatlingCannon01 = Class(import('/lua/terranprojectiles.lua').TIonizedPlasmaGatlingCannon) {
-}
+
+TDFIonizedPlasmaGatlingCannon01 = Class(import('/lua/terranprojectiles.lua').TIonizedPlasmaGatlingCannon) { }
 TypeClass = TDFIonizedPlasmaGatlingCannon01

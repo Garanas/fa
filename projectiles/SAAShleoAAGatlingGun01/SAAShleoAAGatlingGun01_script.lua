@@ -8,6 +8,6 @@
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
-SShleoAACannon = Class(import('/lua/seraphimprojectiles.lua').SShleoAACannon) {
-}
+local SShleoAACannon = import('/lua/seraphimprojectiles.lua').SShleoAACannon
+SShleoAACannon = Class(SShleoAACannon) { }
 TypeClass = SShleoAACannon

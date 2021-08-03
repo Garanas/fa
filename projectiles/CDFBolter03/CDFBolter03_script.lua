@@ -2,7 +2,7 @@
 -- Cybran Heavy Electron Bolter
 --
 
-CDFBolter01 = Class(import('/lua/cybranprojectiles.lua').CHeavyElectronBolterProjectile) {
-}
+local CHeavyElectronBolterProjectile = import('/lua/cybranprojectiles.lua').CHeavyElectronBolterProjectile
+CDFBolter01 = Class(CHeavyElectronBolterProjectile) { }
 TypeClass = CDFBolter01
 

@@ -8,6 +8,6 @@
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
-SAAShleoAAGatlingGun02 = Class(import('/lua/seraphimprojectiles.lua').SShleoAACannon) {
-}
+local SShleoAACannon = import('/lua/seraphimprojectiles.lua').SShleoAACannon
+SAAShleoAAGatlingGun02 = Class(SShleoAACannon) { }
 TypeClass = SAAShleoAAGatlingGun02

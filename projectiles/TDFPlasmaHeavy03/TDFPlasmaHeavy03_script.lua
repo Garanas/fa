@@ -3,6 +3,18 @@
 --
 
 local THeavyPlasmaCannonProjectile = import('/lua/terranprojectiles.lua').THeavyPlasmaCannonProjectile
+local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
+
+-- globals as upvalues for performance 
+local DamageArea = DamageArea
+local CreateDecal = CreateDecal
+local EntityCategoryContains = EntityCategoryContains
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
+-- attach for CTRL + SHIFT F replacement
 
 TDFPlasmaHeavy03 = Class(THeavyPlasmaCannonProjectile) {
 
@@ -16,17 +28,18 @@ TDFPlasmaHeavy03 = Class(THeavyPlasmaCannonProjectile) {
 	end,
     
     OnImpact = function(self, targetType, targetEntity)
-        local pos = self:GetPosition()
-        local FriendlyFire = self.DamageData.DamageFriendly
+        local pos = EntityGetPosition(self)
+
+        local data = self.DamageData
+        local FriendlyFire = data.DamageFriendly
         
         DamageArea( self, pos, 1, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, 1, 1, 'Force', FriendlyFire )
 
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        data.DamageAmount = data.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' and targetType ~= 'Unit' then
-            local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
-            local rotation = RandomFloat(0,2*math.pi)
+            local rotation = RandomFloat(0,2*3.141592)
             local army = self.Army
             
             CreateDecal(pos, rotation, 'scorch_001_albedo', '', 'Albedo', 1, 1, 70, 20, army)

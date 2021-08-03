@@ -7,12 +7,18 @@
 --**
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
-SANAjelluAntiTorpedo01 = Class(import('/lua/seraphimprojectiles.lua').SAnjelluTorpedoDefenseProjectile) {
+
+local SAnjelluTorpedoDefenseProjectile = import('/lua/seraphimprojectiles.lua').SAnjelluTorpedoDefenseProjectile
+
+-- moho functions as upvalue for performance
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetAcceleration = ProjectileMethods.SetAcceleration
+local ProjectileSetLifetime = ProjectileMethods.SetLifetime
+
+SANAjelluAntiTorpedo01 = Class(SAnjelluTorpedoDefenseProjectile) {
 	OnLostTarget = function(self)
-        --self:SetMaxSpeed(2)
-        self:SetAcceleration(-3.6)
-        self:SetLifetime(0.5)
-        --LOG('got on lost target')
+        ProjectileSetAcceleration(self, -3.6)
+        ProjectileSetLifetime(self, 0.5)
     end,
 }
 TypeClass = SANAjelluAntiTorpedo01

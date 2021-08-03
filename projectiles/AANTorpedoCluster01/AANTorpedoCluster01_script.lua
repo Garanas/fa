@@ -9,46 +9,45 @@
 --****************************************************************************
 local ATorpedoCluster = import('/lua/aeonprojectiles.lua').ATorpedoCluster
 local VizMarker = import('/lua/sim/VizMarker.lua').VizMarker
-local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
+local ATorpedoPolyTrails = import('/lua/EffectTemplates.lua').ATorpedoPolyTrails01
+
+-- globals as upvalues for performance 
+local CreateTrail = CreateTrail
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+local EntityDestroy = EntityMethods.Destroy
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileStayUnderwater = ProjectileMethods.StayUnderwater
+
+-- attach for CTRL + SHIFT F replacement
+
+local ChildProjectileBP = '/projectiles/AANTorpedoClusterSplit01/AANTorpedoClusterSplit01_proj.bp'  
 
 AANTorpedoCluster01 = Class(ATorpedoCluster) {
 
-    FxEnterWater= { '/effects/emitters/water_splash_ripples_ring_01_emit.bp',
-                    '/effects/emitters/water_splash_plume_01_emit.bp',},
+    FxEnterWater= { 
+        '/effects/emitters/water_splash_ripples_ring_01_emit.bp',
+        '/effects/emitters/water_splash_plume_01_emit.bp',
+    },
 
     OnCreate = function(self)
         ATorpedoCluster.OnCreate(self)
         self.HasImpacted = false
 
-		CreateTrail(self, -1, self.Army, import('/lua/EffectTemplates.lua').ATorpedoPolyTrails01)
-        
+		CreateTrail(self, -1, self.Army, ATorpedoPolyTrails)
     end,
 
     OnEnterWater = function(self) 
 
-        local Velx, Vely, Velz = self:GetVelocity()
-        local NumberOfChildProjectiles = 1        
-        local ChildProjectileBP = '/projectiles/AANTorpedoClusterSplit01/AANTorpedoClusterSplit01_proj.bp'  
-        local angleRange = math.pi * 0.25
-        local angleInitial = -angleRange / 2
-        local angleIncrement = angleRange / NumberOfChildProjectiles
-        local angleVariation = angleIncrement * 0.4
-        local angle, ca, sa, x, z, proj, mul
+        ProjectileStayUnderwater(self, true)
+
+        proj = self:CreateChildProjectile(ChildProjectileBP)
+        proj.PassDamageData(proj, self.DamageData)
         
-        self:StayUnderwater(true)
-        for i = 0, NumberOfChildProjectiles  do
-            angle = angleInitial + (i*angleIncrement) + RandomFloat(-angleVariation, angleVariation)
-            ca = math.cos(angle)
-            sa = math.sin(angle)
-            x = Velx * ca - Velz * sa
-            z = Velx * sa + Velz * ca
-            proj = self:CreateChildProjectile(ChildProjectileBP)
-            proj:PassDamageData(self.DamageData)
-            mul = RandomFloat(1,3)
-            --proj:SetVelocity( x * mul, Vely * mul, z * mul )
-        end            
-        
-        local pos = self:GetPosition()
+        local pos = EntityGetPosition(self)
         local spec = {
             X = pos[1],
             Z = pos[3],
@@ -58,9 +57,10 @@ AANTorpedoCluster01 = Class(ATorpedoCluster) {
             Vision = false,
             Army = self.Army,
         }
+
         local vizEntity = VizMarker(spec)
         ATorpedoCluster.OnEnterWater(self)
-        self:Destroy()
+        EntityDestroy(self)
     end,
     
     OnImpact = function(self, TargetType, TargetEntity)

@@ -8,7 +8,8 @@
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
-SDFAireauBolter = Class(import('/lua/seraphimprojectiles.lua').SAireauBolter) {
+local SAireauBolter = import('/lua/seraphimprojectiles.lua').SAireauBolter
+SDFAireauBolter = Class(SAireauBolter) {
     FxAirUnitHitScale =  0.75,
     FxLandHitScale =  0.75,
     FxNoneHitScale =  0.75,

@@ -10,11 +10,14 @@
 local SChronatronCannon = import('/lua/seraphimprojectiles.lua').SChronatronCannon
 local ChronatronBlastAttackAOE = import('/lua/EffectTemplates.lua').SChronatronCannonBlastAttackAOE 
 
+-- globals as upvalues for performance 
+local CreateEmitterAtEntity = CreateEmitterAtEntity
+
 SDFChronatronCannon01 = Class(SChronatronCannon) {
 	FxImpactTrajectoryAligned = false,
 	
     CreateImpactEffects = function( self, army, EffectTable, EffectScale )
-		local launcher = self:GetLauncher()
+		local launcher = self.Launcher
 		if launcher and launcher:HasEnhancement( 'BlastAttack' ) then
 			for k, v in ChronatronBlastAttackAOE do
 				emit = CreateEmitterAtEntity(self,army,v)

@@ -12,40 +12,58 @@ local CTorpedoShipProjectile = import('/lua/cybranprojectiles.lua').CTorpedoShip
 local Entity = import('/lua/sim/Entity.lua').Entity
 local defaultDamage = import('/lua/sim/defaultdamage.lua')
 
+-- globals as upvalues for performance 
+local VDist2Sq = VDist2Sq
+local ForkThread = ForkThread
+local WaitSeconds = WaitSeconds
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetVelocity = ProjectileMethods.SetVelocity
+local ProjectileSetMaxSpeed = ProjectileMethods.SetMaxSpeed
+local ProjectileTrackTarget = ProjectileMethods.TrackTarget
+local ProjectileStayUnderwater = ProjectileMethods.StayUnderwater
+local ProjectileChangeMaxZigZag = ProjectileMethods.ChangeMaxZigZag
+local ProjectileChangeZigZagFrequency = ProjectileMethods.ChangeZigZagFrequency
+local ProjectileGetCurrentTargetPosition = ProjectileMethods.GetCurrentTargetPosition
+
+-- attach for CTRL + SHIFT F replacement
+
+local GetSquaredDistanceToTarget = function(self)
+    local tpos = ProjectileGetCurrentTargetPosition(self)
+    local mpos = EntityGetPosition(self)
+    return VDist2Sq(mpos[1], mpos[3], tpos[1], tpos[3])
+end
+
+local MovementThread = function(self)
+    while not EntityBeenDestroyed(self) and (GetSquaredDistanceToTarget(self) > 64) do
+        WaitSeconds(0.25)
+    end  
+    if not EntityBeenDestroyed(self) then
+        ProjectileChangeMaxZigZag(self, 0)
+        ProjectileChangeZigZagFrequency(self, 0)	      
+    end
+end
+
 CANTorpedoNanite02 = Class(CTorpedoShipProjectile) {
 
     TrailDelay = 0,
     OnCreate = function(self, inWater)
         CTorpedoShipProjectile.OnCreate(self, inWater)
-        self:ForkThread( self.MovementThread )
-    end,   
-    
-    MovementThread = function(self)
-        while not self:BeenDestroyed() and (self:GetDistanceToTarget() > 8) do
-            WaitSeconds(0.25)
-        end  
-        if not self:BeenDestroyed() then
-			self:ChangeMaxZigZag(0)
-			self:ChangeZigZagFrequency(0)	      
-		end
-    end,
-    
-    GetDistanceToTarget = function(self)
-        local tpos = self:GetCurrentTargetPosition()
-        local mpos = self:GetPosition()
-        local dist = VDist2(mpos[1], mpos[3], tpos[1], tpos[3])
-        return dist
+        ForkThread( MovementThread , self)
     end,     
          
-
     OnEnterWater = function(self)
         CTorpedoShipProjectile.OnEnterWater(self)
-        self.CreateImpactEffects( self, self.Army, self.FxEnterWater, self.FxSplashScale )
-        self:StayUnderwater(true)
-        self:TrackTarget(true)
-        self:SetTurnRate(120)
-        self:SetMaxSpeed(18)
-        self:SetVelocity(3)
+        self.CreateImpactEffects(self, self.Army, self.FxEnterWater, self.FxSplashScale )
+        ProjectileStayUnderwater(self, true)
+        ProjectileTrackTarget(self, true)
+        ProjectileSetTurnRate(self, 120)
+        ProjectileSetMaxSpeed(self, 18)
+        ProjectileSetVelocity(self, 3)
     end,
 
 }

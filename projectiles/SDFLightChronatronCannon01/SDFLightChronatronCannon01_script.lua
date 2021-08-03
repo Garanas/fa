@@ -8,6 +8,6 @@
 --**  Copyright � 2007 Gas Powered Games, Inc.  All rights reserved.
 --****************************************************************************
 
-SDFLightChronatronCannon01 = Class(import('/lua/seraphimprojectiles.lua').SLightChronatronCannon) {
-}
+local SLightChronatronCannon = import('/lua/seraphimprojectiles.lua').SLightChronatronCannon
+SDFLightChronatronCannon01 = Class(SLightChronatronCannon) { }
 TypeClass = SDFLightChronatronCannon01

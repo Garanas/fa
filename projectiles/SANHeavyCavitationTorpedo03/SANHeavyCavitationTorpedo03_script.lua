@@ -9,45 +9,52 @@
 --****************************************************************************
 local SHeavyCavitationTorpedo = import('/lua/seraphimprojectiles.lua').SHeavyCavitationTorpedo
 local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
-local EffectTemplate = import('/lua/EffectTemplates.lua')
+local SHeavyCavitationTorpedoFxTrails = import('/lua/EffectTemplates.lua').SHeavyCavitationTorpedoFxTrails
+
+-- globals as upvalues for performance 
+local VDist2Sq = VDist2Sq
+local ForkThread = ForkThread
+local WaitSeconds = WaitSeconds
+local CreateEmitterOnEntity = CreateEmitterOnEntity
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
+-- moho functions as upvalue for performance
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetMaxSpeed = ProjectileMethods.SetMaxSpeed
+local ProjectileSetTurnRate = ProjectileMethods.SetTurnRate
+local ProjectileTrackTarget = ProjectileMethods.TrackTarget
+local ProjectileSetCollisionShape = ProjectileMethods.SetCollisionShape
+local ProjectileGetCurrentTargetPosition = ProjectileMethods.GetCurrentTargetPosition
+
+local GetSquaredDistanceToTarget = function(self)
+    local tpos = ProjectileGetCurrentTargetPosition(self)
+    local mpos = EntityGetPosition(self)
+    return VDist2Sq(mpos[1], mpos[3], tpos[1], tpos[3])
+end
+
+local PauseUntilTrack = function(self)
+    local turnrate = 360
+    if GetSquaredDistanceToTarget(self) < 36 then
+        turnrate = 720
+    end
+    
+    WaitSeconds(0.1)
+    ProjectileSetMaxSpeed(self, 20)
+    ProjectileTrackTarget(self, true)
+    ProjectileSetTurnRate(self, turnrate)
+end
 
 SANHeavyCavitationTorpedo03 = Class(SHeavyCavitationTorpedo) {
     OnCreate = function(self)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 0.1)
+        ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 0.1)
         SHeavyCavitationTorpedo.OnCreate(self)
-        self:ForkThread(self.PauseUntilTrack)
-        CreateEmitterOnEntity(self,self.Army,EffectTemplate.SHeavyCavitationTorpedoFxTrails)
+        ForkThread(PauseUntilTrack, self)
+        CreateEmitterOnEntity(self, self.Army, SHeavyCavitationTorpedoFxTrails)
     end,
 
-    PauseUntilTrack = function(self)
-        local distance = self:GetDistanceToTarget()
-        local waittime
-        local turnrate = 360
-        -- The pause time needs to scale down depending on how far away the target is, otherwise
-        -- the torpedoes will initially shoot past their target.
-        if distance > 6 then
-            waittime = .1--.45
-            if distance > 12 then
-                waittime = .1--.7
-                if distance > 18 then
-                        waittime = 0.1--1
-                end
-            end
-        else
-            waittime = .1
-            turnrate = 720
-        end
-        WaitSeconds(waittime)
-        self:SetMaxSpeed(20)
-        self:TrackTarget(true)
-        self:SetTurnRate(turnrate)
-    end,
 
-    GetDistanceToTarget = function(self)
-        local tpos = self:GetCurrentTargetPosition()
-        local mpos = self:GetPosition()
-        local dist = VDist2(mpos[1], mpos[3], tpos[1], tpos[3])
-        return dist
-    end,
 }
 TypeClass = SANHeavyCavitationTorpedo03
