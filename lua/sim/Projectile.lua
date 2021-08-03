@@ -11,31 +11,50 @@ local DefaultDamage = import('/lua/sim/defaultdamage.lua')
 local Flare = import('/lua/defaultantiprojectile.lua').Flare
 
 -- upvalued globals for performance
+local DamageArea = _G.DamageArea
+local Damage = _G.Damage
 
 local TrashBag = _G.TrashBag
 local TrashBagAdd = _G.TrashBag.Add 
 local TrashBagDestroy = _G.TrashBag.Destroy
 
-local ForkThread = ForkThread
-
+local ForkThread = _G.ForkThread
+local GetTerrainType = _G.GetTerrainType
 local GetSurfaceHeight = _G.GetSurfaceHeight
 
 local EntityCategoryContains = EntityCategoryContains
+local CreateEmitterAtBone = CreateEmitterAtBone
+local CreateEmitterAtEntity = CreateEmitterAtEntity
 
 -- upvalued moho functions for performance
 
 local EntityMethods = _G.moho.entity_methods
+local EntityGetBlueprint = EntityMethods.GetBlueprint
+local EntityGetArmy = EntityMethods.GetArmy
+local EntityDestroy = EntityMethods.Destroy
+local EntityPlaySound = EntityMethods.PlaySound
 local EntitySetHealth = EntityMethods.SetHealth
 local EntitySetMaxHealth = EntityMethods.SetMaxHealth
-local EntityBeenDestroyed = EntityMethods.BeenDestroyed
+local EntitySetAmbientSound = EntityMethods.SetAmbientSound
+local EntityGetPositionXYZ = EntityMethods.GetPositionXYZ
+local EntityGetPosition = EntityMethods.GetPosition
 
 local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileGetLauncher = ProjectileMethods.GetLauncher
 local ProjectileSetNewTargetGround = ProjectileMethods.SetNewTargetGround
 local ProjectileGetCurrentTargetPosition = ProjectileMethods.GetCurrentTargetPosition
 local ProjectileGetTrackingTarget = ProjectileMethods.GetTrackingTarget
+local ProjectileSetLifetime = ProjectileMethods.SetLifetime
+
+local EmitterMethods = _G.moho.IEffect
+local EmitterScaleEmitter = EmitterMethods.ScaleEmitter
+local EmitterOffsetEmitter = EmitterMethods.OffsetEmitter
 
 -- upvalued read-only values
 local DoNotCollideCategories = categories.TORPEDO + categories.MISSILE + categories.DIRECTFIRE
+local OnImpactDestroyCategories = categories.ANTIMISSILE * categories.ALLPROJECTILES
+
+local DefaultTerrainTypeFxImpact = GetTerrainType(-1, -1).FxImpact
 
 Projectile = Class(ProjectileMethods, Entity) {
 
@@ -50,32 +69,33 @@ Projectile = Class(ProjectileMethods, Entity) {
     DestroyOnImpact = true,
     FxImpactTrajectoryAligned = true,
 
-    FxImpactAirUnit = {},
-    FxImpactLand = {},
-    FxImpactNone = {},
-    FxImpactProp = {},
-    FxImpactShield = {},
-    FxImpactWater = {},
-    FxImpactUnderWater = {},
-    FxImpactUnit = {},
-    FxImpactProjectile = {},
-    FxImpactProjectileUnderWater = {},
-    FxOnKilled = {},
+    -- FxImpactAirUnit = false,
+    -- FxImpactLand = false,
+    -- FxImpactNone = false,
+    -- FxImpactProp = false,
+    -- FxImpactShield = false,
+    -- FxImpactWater = false,
+    -- FxImpactUnderWater = false,
+    -- FxImpactUnit = false,
+    -- FxImpactProjectile = false,
+    -- FxImpactProjectileUnderWater = false,
+    -- FxOnKilled = false,
 
-    FxAirUnitHitScale = 1,
-    FxLandHitScale = 1,
-    FxNoneHitScale = 1,
-    FxPropHitScale = 1,
-    FxProjectileHitScale = 1,
-    FxProjectileUnderWaterHitScale = 1,
-    FxShieldHitScale = 1,
-    FxUnderWaterHitScale = 0.25,
-    FxUnitHitScale = 1,
-    FxWaterHitScale = 1,
-    FxOnKilledScale = 1,
+    -- FxAirUnitHitScale = 1,
+    -- FxLandHitScale = 1,
+    -- FxNoneHitScale = 1,
+    -- FxPropHitScale = 1,
+    -- FxProjectileHitScale = 1,
+    -- FxProjectileUnderWaterHitScale = 1,
+    -- FxShieldHitScale = 1,
+    -- FxUnderWaterHitScale = 0.25,
+    -- FxUnitHitScale = 1,
+    -- FxWaterHitScale = 1,
+    -- FxOnKilledScale = 1,
 
-    FxImpactLandScorch = false,
-    FxImpactLandScorchScale = 1.0,
+    -- this is always false
+    -- FxImpactLandScorch = false,
+    -- FxImpactLandScorchScale = 1.0,
 
     -- performance-wise this function just hurts and is not needed
     ForkThread = function(self, fn, ...)
@@ -95,14 +115,14 @@ Projectile = Class(ProjectileMethods, Entity) {
     OnCreate = function(self, inWater)
 
         -- get blueprint into local scope for performance
-        local blueprint = self:GetBlueprint()
+        local blueprint = EntityGetBlueprint(self)
 
         -- store original blueprint for functions that need it
         self.Blueprint = blueprint
 
         -- store values for direct access to prevent hashing / engine calls
-        self.Army = self:GetArmy()
-        self.Launcher = self:GetLauncher()
+        self.Army = EntityGetArmy(self)
+        self.Launcher = ProjectileGetLauncher(self)
 
         self.BlueprintDoNotCollideList = blueprint.DoNotCollideList
         self.BlueprintDefenseMaxHealth = blueprint.Defense.MaxHealth or 1
@@ -113,7 +133,6 @@ Projectile = Class(ProjectileMethods, Entity) {
         self.BlueprintAudioEnterWater = audio.EnterWater
 
         local physics = blueprint.Physics
-        self.BlueprintPhysicsHitAssignedTarget = physics.HitAssignedTarget
         self.BlueprintPhysicsTrackTargetGround = physics.TrackTargetGround
         self.BlueprintPhysicsOnLostTargetLifetime = physics.OnLostTargetLifetime
 
@@ -134,7 +153,7 @@ Projectile = Class(ProjectileMethods, Entity) {
         -- set ambient sound if available
         local ambientSound = self.BlueprintAudioExistLoop
         if ambientSound then
-            self:SetAmbientSound(ambientSound, nil)
+            EntitySetAmbientSound(self, ambientSound, nil)
         end
 
         -- update target if we track
@@ -151,54 +170,62 @@ Projectile = Class(ProjectileMethods, Entity) {
     -- receive damage data as deep-copy
     -- PERFORMANCE-TODO: Does this need to be a deep-copy?
     PassDamageData = function(self, DamageData)
-        local SelfDamageData = self.DamageData
-        SelfDamageData.DamageRadius = DamageData.DamageRadius
-        SelfDamageData.DamageAmount = DamageData.DamageAmount
-        SelfDamageData.DamageType = DamageData.DamageType
-        SelfDamageData.DamageFriendly = DamageData.DamageFriendly
-        SelfDamageData.CollideFriendly = DamageData.CollideFriendly
-        SelfDamageData.DoTTime = DamageData.DoTTime
-        SelfDamageData.DoTPulses = DamageData.DoTPulses
-        SelfDamageData.MetaImpactAmount = DamageData.MetaImpactAmount
-        SelfDamageData.MetaImpactRadius = DamageData.MetaImpactRadius
-        SelfDamageData.Buffs = DamageData.Buffs
-        SelfDamageData.ArtilleryShieldBlocks = DamageData.ArtilleryShieldBlocks
-        SelfDamageData.InitialDamageAmount = DamageData.InitialDamageAmount
-        self.CollideFriendly = SelfDamageData.CollideFriendly
+
+        self.DamageData = DamageData
+
+        -- local SelfDamageData = self.DamageData
+        -- for k, value in DamageData do 
+        --     SelfDamageData[k] = value
+        -- end
+
+        self.CollideFriendly = DamageData.CollideFriendly
+        -- SelfDamageData.DamageRadius = DamageData.DamageRadius
+        -- SelfDamageData.DamageAmount = DamageData.DamageAmount
+        -- SelfDamageData.DamageType = DamageData.DamageType
+        -- SelfDamageData.DamageFriendly = DamageData.DamageFriendly
+        -- SelfDamageData.CollideFriendly = DamageData.CollideFriendly
+        -- SelfDamageData.DoTTime = DamageData.DoTTime
+        -- SelfDamageData.DoTPulses = DamageData.DoTPulses
+        -- SelfDamageData.MetaImpactAmount = DamageData.MetaImpactAmount
+        -- SelfDamageData.MetaImpactRadius = DamageData.MetaImpactRadius
+        -- SelfDamageData.Buffs = DamageData.Buffs
+        -- SelfDamageData.ArtilleryShieldBlocks = DamageData.ArtilleryShieldBlocks
+        -- SelfDamageData.InitialDamageAmount = DamageData.InitialDamageAmount
     end,
 
     DoDamage = function(self, instigator, DamageData, targetEntity)
         local damage = DamageData.DamageAmount
         if damage and damage > 0 then
+            local position = EntityGetPosition(self)
             local radius = DamageData.DamageRadius
             if radius and radius > 0 then
                 if not DamageData.DoTTime or DamageData.DoTTime <= 0 then
-                    DamageArea(instigator, self:GetPosition(), radius, damage, DamageData.DamageType, DamageData.DamageFriendly, DamageData.DamageSelf or false)
+                    DamageArea(instigator, position, radius, damage, DamageData.DamageType, DamageData.DamageFriendly, DamageData.DamageSelf or false)
                 else
                     -- DoT damage - check for initial damage
                     local initialDmg = DamageData.InitialDamageAmount or 0
                     if initialDmg > 0 then
                         if radius > 0 then
-                            DamageArea(instigator, self:GetPosition(), radius, initialDmg, DamageData.DamageType, DamageData.DamageFriendly, DamageData.DamageSelf or false)
+                            DamageArea(instigator, position, radius, initialDmg, DamageData.DamageType, DamageData.DamageFriendly, DamageData.DamageSelf or false)
                         elseif targetEntity then
-                            Damage(instigator, self:GetPosition(), targetEntity, initialDmg, DamageData.DamageType)
+                            Damage(instigator, position, targetEntity, initialDmg, DamageData.DamageType)
                         end
                     end
 
-                    ForkThread(DefaultDamage.AreaDoTThread, instigator, self:GetPosition(), DamageData.DoTPulses or 1, (DamageData.DoTTime / (DamageData.DoTPulses or 1)), radius, damage, DamageData.DamageType, DamageData.DamageFriendly)
+                    ForkThread(DefaultDamage.AreaDoTThread, instigator, position, DamageData.DoTPulses or 1, (DamageData.DoTTime / (DamageData.DoTPulses or 1)), radius, damage, DamageData.DamageType, DamageData.DamageFriendly)
                 end
             -- ONLY DO DAMAGE IF THERE IS DAMAGE DATA.  SOME PROJECTILE DO NOT DO DAMAGE WHEN THEY IMPACT.
             elseif DamageData.DamageAmount and targetEntity then
                 if not DamageData.DoTTime or DamageData.DoTTime <= 0 then
-                    Damage(instigator, self:GetPosition(), targetEntity, DamageData.DamageAmount, DamageData.DamageType)
+                    Damage(instigator, position, targetEntity, DamageData.DamageAmount, DamageData.DamageType)
                 else
                     -- DoT damage - check for initial damage
                     local initialDmg = DamageData.InitialDamageAmount or 0
                     if initialDmg > 0 then
                         if radius > 0 then
-                            DamageArea(instigator, self:GetPosition(), radius, initialDmg, DamageData.DamageType, DamageData.DamageFriendly, DamageData.DamageSelf or false)
+                            DamageArea(instigator, position, radius, initialDmg, DamageData.DamageType, DamageData.DamageFriendly, DamageData.DamageSelf or false)
                         elseif targetEntity then
-                            Damage(instigator, self:GetPosition(), targetEntity, initialDmg, DamageData.DamageType)
+                            Damage(instigator, position, targetEntity, initialDmg, DamageData.DamageType)
                         end
                     end
 
@@ -268,7 +295,7 @@ Projectile = Class(ProjectileMethods, Entity) {
         local health = self:GetHealth()
         if health <= 0 then
             if damageType == 'Reclaimed' then
-                self:Destroy()
+                EntityDestroy(self)
             else
                 local excessDamageRatio = 0.0
 
@@ -284,57 +311,61 @@ Projectile = Class(ProjectileMethods, Entity) {
     end,
 
     OnKilled = function(self, instigator, type, overkillRatio)
-        self:CreateImpactEffects(self.Army, self.FxOnKilled, self.FxOnKilledScale)
-        self:Destroy()
+        self.CreateImpactEffects(self, self.Army, self.FxOnKilled, self.FxOnKilledScale)
+        EntityDestroy(self)
     end,
 
     DoMetaImpact = function(self, damageData)
         if damageData.MetaImpactRadius and damageData.MetaImpactAmount then
-            local pos = self:GetPosition()
-            pos[2] = GetSurfaceHeight(pos[1], pos[3])
-            MetaImpact(self, pos, damageData.MetaImpactRadius, damageData.MetaImpactAmount)
+            local x, y, z = EntityGetPositionXYZ(self)
+            y = GetSurfaceHeight(x, z)
+            MetaImpact(self, { x, y, z }, damageData.MetaImpactRadius, damageData.MetaImpactAmount)
         end
     end,
 
     CreateImpactEffects = function(self, army, EffectTable, EffectScale)
-        local emit = nil
+        -- default values
+        EffectScale = EffectScale or 1
+
+        -- caching
+        local fxImpactTrajectoryAligned = self.FxImpactTrajectoryAligned
+
+        -- create the emitters
+        local emit
         for _, v in EffectTable do
-            if self.FxImpactTrajectoryAligned then
+
+            -- construct emitter
+            if fxImpactTrajectoryAligned then
                 emit = CreateEmitterAtBone(self, -2, army, v)
             else
                 emit = CreateEmitterAtEntity(self, army, v)
             end
-            if emit and EffectScale ~= 1 then
-                emit:ScaleEmitter(EffectScale or 1)
-            end
+
+            EmitterScaleEmitter(emit, EffectScale)
         end
     end,
 
     CreateTerrainEffects = function(self, army, EffectTable, EffectScale)
-        local emit = nil
+        -- default values
+        EffectScale = EffectScale or 1
+
         for _, v in EffectTable do
-            emit = CreateEmitterAtBone(self, -2, army, v)
-            if emit and EffectScale ~= 1 then
-                emit:ScaleEmitter(EffectScale or 1)
-            end
+            local emit = CreateEmitterAtBone(self, -2, army, v)
+            EmitterScaleEmitter(emit, EffectScale )
         end
     end,
 
     GetTerrainEffects = function(self, TargetType, ImpactEffectType)
-        local pos = self:GetPosition()
-        local TerrainType = nil
+        -- default value
+        ImpactEffectType = ImpactEffectType or 'Default'
 
-        if ImpactEffectType then
-            TerrainType = GetTerrainType(pos.x, pos.z)
-            if TerrainType.FXImpact[TargetType][ImpactEffectType] == nil then
-                TerrainType = GetTerrainType(-1, -1)
-            end
-        else
-            TerrainType = GetTerrainType(-1, -1)
-            ImpactEffectType = 'Default'
-        end
-
-        return TerrainType.FXImpact[TargetType][ImpactEffectType] or {}
+        -- get x / z position
+        local x, y, z = EntityGetPositionXYZ(self)
+    
+        -- get terrain at that location and try and get some effects
+        local TerrainType = GetTerrainType(x, z)
+        local TerrainEffect = TerrainType.FXImpact[TargetType][ImpactEffectType] or DefaultTerrainTypeFxImpact[TargetType][ImpactEffectType] or { }
+        return TerrainEffect
     end,
 
     OnCollisionCheckWeapon = function(self, firingWeapon)
@@ -345,7 +376,7 @@ Projectile = Class(ProjectileMethods, Entity) {
         -- If this unit category is on the weapon's do-not-collide list, skip!
         local weaponBP = firingWeapon.Blueprint
         if weaponBP.DoNotCollideList then
-            for k, v in pairs(weaponBP.DoNotCollideList) do
+            for k, v in weaponBP.DoNotCollideList do
                 if EntityCategoryContains(ParseEntityCategory(v), self) then
                     return false
                 end
@@ -356,22 +387,21 @@ Projectile = Class(ProjectileMethods, Entity) {
 
     -- Create some cool explosions when we get destroyed
     OnImpact = function(self, targetType, targetEntity)
+        
         -- Try to use the launcher as instigator first. If its been deleted, use ourselves (this
         -- projectile is still associated with an army)
-        local instigator = self:GetLauncher()
-        if instigator == nil then
-            instigator = self
-        end
+        local army = self.Army
+        local instigator = self.Launcher or self 
         local damageData = self.DamageData
 
         -- Do Damage
-        self:DoDamage(instigator, damageData, targetEntity)
+        self.DoDamage(self, instigator, damageData, targetEntity)
 
         -- Meta-Impact
-        self:DoMetaImpact(damageData)
+        self.DoMetaImpact(self, damageData)
 
         -- Buffs (Stun, etc)
-        self:DoUnitImpactBuffs(targetEntity)
+        self.DoUnitImpactBuffs(self, targetEntity)
 
         -- Possible 'target' values are:
         --  'Unit'
@@ -385,39 +415,36 @@ Projectile = Class(ProjectileMethods, Entity) {
         --  'UnitUnderwater'
         --  'Projectile'
         --  'ProjectileUnderWater
-        local ImpactEffects = {}
+        local ImpactEffects = false
         local ImpactEffectScale = 1
         local bp = self.Blueprint
-        local bpAud = bp.Audio
 
         -- Sounds for all other impacts, ie: Impact<TargetTypeName>
+        local bpAud = bp.Audio
         local snd = bpAud['Impact'..targetType]
         if snd then
-            self:PlaySound(snd)
+            EntityPlaySound(self, snd)
             -- Generic Impact Sound
         elseif bpAud.Impact then
-            self:PlaySound(bpAud.Impact)
+            EntityPlaySound(self, bpAud.Impact)
         end
 
         -- ImpactEffects
         if targetType == 'Water' then
             ImpactEffects = self.FxImpactWater
             ImpactEffectScale = self.FxWaterHitScale
-        elseif targetType == 'Underwater' or targetType == 'UnitUnderwater' then
-            ImpactEffects = self.FxImpactUnderWater
-            ImpactEffectScale = self.FxUnderWaterHitScale
+        elseif targetType == 'Terrain' then
+            ImpactEffects = self.FxImpactLand
+            ImpactEffectScale = self.FxLandHitScale
+        elseif targetType == 'Shield' then
+            ImpactEffects = self.FxImpactShield
+            ImpactEffectScale = self.FxShieldHitScale
         elseif targetType == 'Unit' then
             ImpactEffects = self.FxImpactUnit
             ImpactEffectScale = self.FxUnitHitScale
         elseif targetType == 'UnitAir' then
             ImpactEffects = self.FxImpactAirUnit
             ImpactEffectScale = self.FxAirUnitHitScale
-        elseif targetType == 'Terrain' then
-            ImpactEffects = self.FxImpactLand
-            ImpactEffectScale = self.FxLandHitScale
-            if self.FxImpactLandScorch then
-                Explosion.CreateRandomScorchSplatAtObject(self, self.FxImpactLandScorchScale, 150, 20, self.Army)
-            end
         elseif targetType == 'Air' then
             ImpactEffects = self.FxImpactNone
             ImpactEffectScale = self.FxNoneHitScale
@@ -430,35 +457,41 @@ Projectile = Class(ProjectileMethods, Entity) {
         elseif targetType == 'Prop' then
             ImpactEffects = self.FxImpactProp
             ImpactEffectScale = self.FxPropHitScale
-        elseif targetType == 'Shield' then
-            ImpactEffects = self.FxImpactShield
-            ImpactEffectScale = self.FxShieldHitScale
+        elseif targetType == 'Underwater' or targetType == 'UnitUnderwater' then
+            ImpactEffects = self.FxImpactUnderWater
+            ImpactEffectScale = self.FxUnderWaterHitScale or 0.25
         else
             LOG('*ERROR: Projectile:OnImpact(): UNKNOWN TARGET TYPE ', repr(targetType))
         end
 
-        local TerrainEffects = self:GetTerrainEffects(targetType, bp.Display.ImpactEffects.Type)
-        self:CreateImpactEffects(self.Army, ImpactEffects, ImpactEffectScale)
-        self:CreateTerrainEffects(self.Army, TerrainEffects, bp.Display.ImpactEffects.Scale or 1)
+        -- default values
+        ImpactEffects = ImpactEffects or { }
+        ImpactEffectScale = ImpactEffectScale or 1
+
+        local BlueprintDisplayImpactEffects = bp.Display.ImpactEffects
+        local TerrainEffects = self.GetTerrainEffects(self, targetType, BlueprintDisplayImpactEffects.Type)
+        self.CreateImpactEffects(self, army, ImpactEffects, ImpactEffectScale)
+        self.CreateTerrainEffects(self, army, TerrainEffects, BlueprintDisplayImpactEffects.Scale or 1)
 
         local timeout = bp.Physics.ImpactTimeout
         if timeout and targetType == 'Terrain' then
             TrashBagAdd(self.Trash, ForkThread(self.ImpactTimeoutThread, self, timeout))
         else
-            self:OnImpactDestroy(targetType, targetEntity)
+            self.OnImpactDestroy(self, targetType, targetEntity)
         end
     end,
 
     OnImpactDestroy = function(self, targetType, targetEntity)
-        if self.DestroyOnImpact or not targetEntity or
-            (not self.DestroyOnImpact and targetEntity and not EntityCategoryContains(categories.ANTIMISSILE * categories.ALLPROJECTILES, targetEntity)) then
-            self:Destroy()
+        local destroyOnImpact = self.DestroyOnImpact
+        if destroyOnImpact or not targetEntity or
+            (not destroyOnImpact and targetEntity and not EntityCategoryContains(OnImpactDestroyCategories, targetEntity)) then
+            EntityDestroy(self)
         end
     end,
 
     ImpactTimeoutThread = function(self, seconds)
         WaitSeconds(seconds)
-        self:Destroy()
+        EntityDestroy(self)
     end,
 
     -- When this projectile impacts with the target, do any buffs that have been passed to it.
@@ -470,7 +503,7 @@ Projectile = Class(ProjectileMethods, Entity) {
             for k, v in data.Buffs do
                 if v.Add.OnImpact == true then
                     if v.AppliedToTarget ~= true or (v.Radius and v.Radius > 0) then
-                        target = self:GetLauncher()
+                        target = self.Launcher
                     end
                     -- Check for target validity
                     if target and IsUnit(target) then
@@ -549,7 +582,7 @@ Projectile = Class(ProjectileMethods, Entity) {
 
     OnLostTarget = function(self)
         if self.BlueprintPhysicsTrackTarget then
-            self:SetLifetime(self.BlueprintPhysicsOnLostTargetLifetime or 0.5)
+            ProjectileSetLifetime(self, self.BlueprintPhysicsOnLostTargetLifetime or 0.5)
         end
     end,
 }

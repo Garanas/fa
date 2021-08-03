@@ -4,7 +4,7 @@ local CRocketProjectile = import('/lua/cybranprojectiles.lua').CRocketProjectile
 
 
 -- globals as upvalues for performance 
-local ForkThread = ForkThreadeA
+local ForkThread = ForkThread
 local WaitSeconds = WaitSeconds
 local CreateTrail = CreateTrail
 

@@ -45,7 +45,7 @@ end
 CAANanoDart01 = Class(CAANanoDartProjectile03) {
    OnCreate = function(self)
         CAANanoDartProjectile03.OnCreate(self)
-        self.Trash:Add(ForkThread(self.UpdateThread, self))
+        self.Trash:Add(ForkThread(UpdateThread, self))
    end,
 }
 

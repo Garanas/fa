@@ -16,11 +16,16 @@ local DamageRing = DamageRing
 local DamageArea = DamageArea
 local CreateDecal = CreateDecal
 
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
 CDFRocketIridium02 = Class(CIridiumRocketProjectile) {
     OnImpact = function(self, targetType, targetEntity)
         local pos = EntityGetPosition(self)
 
-        local damageData = self.Damagedata
+        local army = self.Army
+        local damageData = self.DamageData
         local radius = damageData.DamageRadius
         local FriendlyFire = damageData.DamageFriendly
         
@@ -31,10 +36,7 @@ CDFRocketIridium02 = Class(CIridiumRocketProjectile) {
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
             local rotation = RandomFloat(0,2*3.141592)
-            local army = self.Army
-
             DamageRing( self, pos, radius, 5/4 * radius, 1, 'Fire', true )
-            
             CreateDecal(pos, rotation, 'scorch_001_albedo', '', 'Albedo', radius+1, radius+1, 100, 50, army)
         end
         

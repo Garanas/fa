@@ -34,16 +34,16 @@ local SetTurnRateByDist = function(self)
         --Freeze the turn rate as to prevent steep angles at long distance targets
         WaitSeconds(2)
         ProjectileSetTurnRate(self, 20)
-    elseif dist > 16.384 and dist <= 45.369 then
+    elseif dist > 16384 and dist <= 45369 then
         -- Increase check intervals
         ProjectileSetTurnRate(self, 30)
         WaitSeconds(1.5)
         ProjectileSetTurnRate(self, 30)
-    elseif dist > 1.849 and dist <= 11.449 then
+    elseif dist > 1849 and dist <= 11449 then
         -- Further increase check intervals
         WaitSeconds(0.3)
         ProjectileSetTurnRate(self, 50)
-    elseif dist > 0 and dist <= 1.849 then
+    elseif dist > 0 and dist <= 1849 then
         -- Further increase check intervals            
         ProjectileSetTurnRate(self, 100)   
         KillThread(CurrentThread())         

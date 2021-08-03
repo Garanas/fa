@@ -3,6 +3,24 @@
 --
 local AMissileSerpentineProjectile = import('/lua/aeonprojectiles.lua').AMissileSerpentineProjectile
 
+-- globals as upvalues for performance 
+local ForkThread = ForkThread
+local WaitSeconds = WaitSeconds
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+local EntityBeenDestroyed = EntityMethods.BeenDestroyed
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetTurnRate = ProjectileMethods.SetTurnRate
+local ProjectileGetCurrentTargetPosition = ProjectileMethods.GetCurrentTargetPosition
+local ProjectileSetCollisionShape = ProjectileMethods.SetCollisionShape
+local ProjectileSetLifetime = ProjectileMethods.SetLifetime
+local ProjectileSetDestroyOnWater = ProjectileMethods.SetDestroyOnWater
+
+-- attach for CTRL + SHIFT F replacement
+
 AIFMissileSerpentine02 = Class(AMissileSerpentineProjectile) {
 
     FxWaterHitScale = 1.65,
@@ -31,16 +49,16 @@ AIFMissileSerpentine02 = Class(AMissileSerpentineProjectile) {
             WaitSeconds(2)
             ProjectileSetTurnRate(self, 20)
         elseif dist > 64 and dist <= 107 then
-						-- Increase check intervals
-						ProjectileSetTurnRate(self, 30)
-						WaitSeconds(1.5)
+            -- Increase check intervals
+            ProjectileSetTurnRate(self, 30)
+            WaitSeconds(1.5)
             ProjectileSetTurnRate(self, 30)
         elseif dist > 21 and dist <= 53 then
-						-- Further increase check intervals
+            -- Further increase check intervals
             WaitSeconds(0.3)
             ProjectileSetTurnRate(self, 50)
-				elseif dist > 0 and dist <= 21 then
-						-- Further increase check intervals            
+        elseif dist > 0 and dist <= 21 then
+            -- Further increase check intervals            
             ProjectileSetTurnRate(self, 100)   
             KillThread(self.MoveThread)         
         end

@@ -91,7 +91,7 @@ TIFMissileCruise03 = Class(TMissileCruiseProjectile) {
     OnCreate = function(self)
         TMissileCruiseProjectile.OnCreate(self)
         ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 2)        
-        self.MoveThread = ForkThread(self.MovementThread, self)
+        self.MoveThread = ForkThread(MovementThread, self)
     end,      
     
     OnImpact = function(self, targetType, targetEntity)

@@ -17,6 +17,7 @@ local ProjectileMethods = _G.moho.projectile_methods
 local ProjectileSetTurnRate = ProjectileMethods.SetTurnRate
 local ProjectileGetCurrentTargetPosition = ProjectileMethods.GetCurrentTargetPosition
 local ProjectileSetCollisionShape = ProjectileMethods.SetCollisionShape
+local ProjectileSetDestroyOnWater = ProjectileMethods.SetDestroyOnWater
 
 -- attach for CTRL + SHIFT F replacement
 

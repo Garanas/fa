@@ -10,21 +10,9 @@ local Projectile = import('/lua/sim/projectile.lua').Projectile
 
 -- globals as upvalues for performance
 local Warp = Warp 
-local VDist2Sq = VDist2Sq
 local Damage = Damage
-local DamageArea = DamageArea
-local ForkThread = ForkThread
-local WaitSeconds = WaitSeconds
-local CreateTrail = CreateTrail
-local CreateDecal = CreateDecal
-local CreateEmitterAtEntity = CreateEmitterAtEntity
-local CreateEmitterAtBone = CreateEmitterAtBone
-local CreateLightParticle = CreateLightParticle
-local CreateEmitterOnEntity = CreateEmitterOnEntity
 
 -- math functions as upvalues for performance
-local MathSin = _G.math.sin
-local MathCos = _G.math.cos 
 local MathMin = _G.math.min 
 local MathMax = _G.math.max 
 local MathClamp = _G.math.clamp
@@ -34,45 +22,23 @@ local MathSqrt = _G.math.sqrt
 local EntityMethods = _G.moho.entity_methods
 local EntityDestroy = EntityMethods.Destroy
 local EntityGetPosition = EntityMethods.GetPosition
-local EntityGetPositionXYZ = EntityMethods.GetPositionXYZ
-local EntityGetHealth = EntityMethods.GetHealth
-local EntityPlaySound = EntityMethods.PlaySound
 local EntityBeenDestroyed = EntityMethods.BeenDestroyed
-local EntitySetMesh = EntityMethods.SetMesh
-local EntityCreateProjectile = EntityMethods.CreateProjectile
 local EntityGetOrientation = EntityMethods.GetOrientation
 local EntityDetachAll = EntityMethods.DetachAll
 local EntityGetMaxHealth = EntityMethods.GetMaxHealth
+local EntitySetVizToFocusPlayer = EntityMethods.SetVizToFocusPlayer
+local EntitySetVizToAllies = EntityMethods.SetVizToAllies
+local EntitySetVizToNeutrals = EntityMethods.SetVizToNeutrals
+local EntitySetVizToEnemies = EntityMethods.SetVizToEnemies
+
+local UnitMethods = _G.moho.unit_methods
+local UnitGetVelocity = UnitMethods.GetVelocity
 
 local ProjectileMethods = _G.moho.projectile_methods
-local ProjectileShakeCamera = ProjectileMethods.ShakeCamera
-local ProjectileSetAcceleration = ProjectileMethods.SetAcceleration
 local ProjectileGetVelocity = ProjectileMethods.GetVelocity
 local ProjectileSetVelocity = ProjectileMethods.SetVelocity
-local ProjectileSetScaleVelocity = ProjectileMethods.SetScaleVelocity
-local ProjectileStayUnderwater = ProjectileMethods.StayUnderwater
-local ProjectileSetTurnRate = ProjectileMethods.SetTurnRate
-local ProjectileSetStayUpRight = ProjectileMethods.SetStayUpRight
-local ProjectileSetMaxSpeed = ProjectileMethods.SetMaxSpeed
-local ProjectileTrackTarget = ProjectileMethods.TrackTarget
-local ProjectileGetTrackingTarget = ProjectileMethods.GetTrackingTarget
-local ProjectileSetVelocityAlign = ProjectileMethods.SetVelocityAlign
-local ProjectileCreateChildProjectile = ProjectileMethods.CreateChildProjectile
-local ProjectileSetDestroyOnWater = ProjectileMethods.SetDestroyOnWater
-local ProjectileGetCurrentTargetPosition = ProjectileMethods.GetCurrentTargetPosition
-local ProjectileSetCollisionShape = ProjectileMethods.SetCollisionShape
-local ProjectileSetLifetime = ProjectileMethods.SetLifetime
-local ProjectileSetBallisticAcceleration = ProjectileMethods.SetBallisticAcceleration
-local ProjectileChangeMaxZigZag = ProjectileMethods.ChangeMaxZigZag
-local ProjectileChangeZigZagFrequency = ProjectileMethods.ChangeZigZagFrequency
-local ProjectileSetCollideSurface = ProjectileMethods.SetCollideSurface
+local ProjectileSetStayUpRight = ProjectileMethods.SetStayUpright
 local ProjectileSetCollision = ProjectileMethods.SetCollision
-
-local EmitterMethods = _G.moho.IEffect
-local EmitterScaleEmitter = EmitterMethods.ScaleEmitter
-local EmitterOffsetEmitter = EmitterMethods.OffsetEmitter
-
-local TrashAdd = TrashBag.Add
 
 -- attach for CTRL + SHIFT F replacement
 
@@ -82,10 +48,10 @@ ShieldCollider = Class(Projectile) {
     OnCreate = function(self)
         Projectile.OnCreate(self)
 
-        self:SetVizToFocusPlayer('Never') -- Set to 'Always' to see a nice box
-        self:SetVizToAllies('Never')
-        self:SetVizToNeutrals('Never')
-        self:SetVizToEnemies('Never')
+        EntitySetVizToFocusPlayer(self, 'Never') -- Set to 'Always' to see a nice box
+        EntitySetVizToAllies(self, 'Never')
+        EntitySetVizToNeutrals(self, 'Never')
+        EntitySetVizToEnemies(self, 'Never')
         ProjectileSetStayUpRight(self, false)
         ProjectileSetCollision(self, true)
     end,
@@ -98,7 +64,7 @@ ShieldCollider = Class(Projectile) {
     end,
 
     StartFalling = function(self)
-        local vx, vy, vz = ProjectileGetVelocity(self.Plane)
+        local vx, vy, vz = UnitGetVelocity(self.Plane)
 
         -- For now we just follow the plane along, not attaching so it can rotate
         ProjectileSetVelocity(self, 10 * vx, 10 * vy, 10 * vz)
@@ -135,7 +101,7 @@ ShieldCollider = Class(Projectile) {
                 if not plane.GroundImpacted then
                     plane:OnImpact(targetType)
                 end
-                EntityDestroy(self)
+                self:Destroy()
 
             elseif targetType == 'Shield' and targetEntity and not EntityBeenDestroyed(targetEntity) and targetEntity.ShieldType == 'Bubble' then
                 if not self.ShieldImpacted and not plane.GroundImpacted then
@@ -199,7 +165,7 @@ ShieldCollider = Class(Projectile) {
         local spin = MathMin (4 / volume, 2) -- Less for larger planes; also 2 is a nice number
         self:SetLocalAngularVelocity(spin, spin, spin) -- Ideally I would just set this to whatever the plane had but I dont know how
 
-        local vx, vy, vz = ProjectileGetVelocity(self.Plane) -- Current plane velocity
+        local vx, vy, vz = UnitGetVelocity(self.Plane) -- Current plane velocity
         local wx, wy, wz = vector.x, vector.y, vector.z
 
         -- Convert our speed values from units per tick to units per second

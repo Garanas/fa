@@ -52,7 +52,7 @@ CANTorpedoNanite03 = Class(CTorpedoShipProjectile) {
     TrailDelay = 0,
     OnCreate = function(self, inWater)
         CTorpedoShipProjectile.OnCreate(self, inWater)
-        ForkThread( self.MovementThread , self)
+        ForkThread( MovementThread , self)
     end,    
 
     OnEnterWater = function(self)

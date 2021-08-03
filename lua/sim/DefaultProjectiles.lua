@@ -23,8 +23,17 @@ EmitterProjectile = Class(Projectile) {
 
     OnCreate = function(self)
         Projectile.OnCreate(self)
-        for i in self.FxTrails do
-            CreateEmitterOnEntity(self, self.Army, self.FxTrails[i]):ScaleEmitter(self.FxTrailScale):OffsetEmitter(0, 0, self.FxTrailOffset)
+
+        local fxTrails = self.FxTrails
+        if fxTrails then 
+            local army = self.Army
+            local fxTrailScale = self.FxTrailScale
+            local fxTrailOffset = self.FxTrailOffset
+            for i in fxTrails do
+                local emit = CreateEmitterOnEntity(self, army, fxTrails[i])
+                emit:ScaleEmitter(fxTrailScale)
+                emit:OffsetEmitter(0, 0, fxTrailOffset)
+            end
         end
     end,
 }
@@ -188,27 +197,45 @@ SinglePolyTrailProjectile = Class(EmitterProjectile) {
     end,
 }
 
+local MathFloor = math.floor
+local CreateTrail = CreateTrail
+local Random = Random
+
+local EmitterMethods = _G.moho.IEffect
+local EmitterScaleEmitter = EmitterMethods.ScaleEmitter
+local EmitterOffsetEmitter = EmitterMethods.OffsetEmitter
+
 MultiPolyTrailProjectile = Class(EmitterProjectile) {
 
     PolyTrails = {'/effects/emitters/test_missile_trail_emit.bp'},
-    PolyTrailOffset = {0},
-    FxTrails = {},
+    PolyTrailOffset = { 0 },
+    FxTrails = false,
     RandomPolyTrails = 0,   -- Count of how many are selected randomly for PolyTrail table
 
     OnCreate = function(self)
         EmitterProjectile.OnCreate(self)
-        if self.PolyTrails then
-            local NumPolyTrails = table.getn(self.PolyTrails)
 
-            if self.RandomPolyTrails ~= 0 then
-                local index = nil
-                for i = 1, self.RandomPolyTrails do
-                    index = math.floor(Random(1, NumPolyTrails))
-                    CreateTrail(self, -1, self.Army, self.PolyTrails[index]):OffsetEmitter(0, 0, self.PolyTrailOffset[index])
+        -- see if we have trails
+        local polyTrails = self.PolyTrails
+        if polyTrails then
+
+            -- information that is used in both branches
+            local army = self.Army
+            local randomPolyTrails = self.RandomPolyTrails
+            local polyTrailOffset = self.PolyTrailOffset
+            local NumPolyTrails = table.getn(self.PolyTrails)   -- ouch
+
+            -- check if they should be random or not
+            if randomPolyTrails ~= 0 then
+                for i = 1, randomPolyTrails do
+                    local index = MathFloor(Random(1, NumPolyTrails))
+                    local emit = CreateTrail(self, -1, army, polyTrails[index])
+                    EmitterOffsetEmitter(emit, 0, 0, polyTrailOffset[index])
                 end
             else
                 for i = 1, NumPolyTrails do
-                    CreateTrail(self, -1, self.Army, self.PolyTrails[i]):OffsetEmitter(0, 0, self.PolyTrailOffset[i])
+                    local emit = CreateTrail(self, -1, army, polyTrails[i])
+                    EmitterOffsetEmitter(emit, 0, 0, polyTrailOffset[i])
                 end
             end
         end

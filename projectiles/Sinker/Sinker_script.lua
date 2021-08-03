@@ -20,7 +20,7 @@ local EntitySetVizToAllies = EntityMethods.SetVizToAllies
 local EntitySetVizToNeutrals = EntityMethods.SetVizToNeutrals
 
 local ProjectileMethods = _G.moho.projectile_methods
-local ProjectileSetStayUpRight = ProjectileMethods.SetStayUpRight
+local ProjectileSetStayUpRight = ProjectileMethods.SetStayUpright
 local ProjectileSetBallisticAcceleration = ProjectileMethods.SetBallisticAcceleration
 
 local EmitterMethods = _G.moho.IEffect

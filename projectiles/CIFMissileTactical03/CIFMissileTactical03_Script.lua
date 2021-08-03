@@ -88,19 +88,20 @@ CIFMissileTactical03 = Class(CLOATacticalMissileProjectile) {
     end,    
     
     OnImpact = function(self, targetType, targetEntity)
-        local radius = self.DamageData.DamageRadius
+        local army = self.Army
+        local data = self.Damagedata
+        local radius = data.DamageRadius
+        local FriendlyFire = data.DamageFriendly
+
         local pos = EntityGetPosition(self)
-        local FriendlyFire = self.DamageData.DamageFriendly
-        
         CreateLightParticle( self, -1, army, 3, 7, 'glow_03', 'ramp_fire_11' )
         
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
         
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        data.DamageAmount = data.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local army = self.Army
             local rotation = RandomFloat(0,2*3.141592)
             CreateDecal(pos, rotation, 'scorch_001_albedo', '', 'Albedo', radius+3, radius+3, 300, 90, army)
         end

@@ -26,7 +26,7 @@ CIFArtilleryProton03 = Class(CArtilleryProtonProjectile) {
     OnImpact = function(self, targetType, targetEntity)
         local pos = EntityGetPosition(self)
 
-        local damageData = self.Damagedata
+        local damageData = self.DamageData
         local radius = damageData.DamageRadius
         local FriendlyFire = damageData.DamageFriendly
         

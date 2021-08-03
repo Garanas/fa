@@ -26,6 +26,7 @@ SIFThunthoArtilleryShell02 = Class(SThunthoArtilleryShell2) {
     OnImpact = function(self, targetType, targetEntity)
         local pos = EntityGetPosition(self)
 
+        local army = self.Army
         local data = self.DamageData
         local radius = data.DamageRadius
         local FriendlyFire = data.DamageFriendly
@@ -36,10 +37,7 @@ SIFThunthoArtilleryShell02 = Class(SThunthoArtilleryShell2) {
         data.DamageAmount = data.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-
             local rotation = RandomFloat(0,2*3.141592)
-            local army = self.Army
-            
             CreateDecal(pos, rotation, 'crater_radial01_albedo', '', 'Albedo', radius-1, radius-1, 100, 10, army)
         end
         

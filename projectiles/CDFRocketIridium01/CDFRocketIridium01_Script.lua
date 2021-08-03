@@ -10,6 +10,10 @@ local DamageRing = DamageRing
 local DamageArea = DamageArea
 local CreateDecal = CreateDecal
 
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+
 CDFRocketIridium01 = Class(CIridiumRocketProjectile) {
     OnImpact = function(self, targetType, targetEntity)
         local pos = EntityGetPosition(self)

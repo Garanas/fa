@@ -218,10 +218,11 @@ TDFGaussCannonProjectile = Class(TDFGeneralGaussCannonProjectile) {
     FxImpactProp = EffectTemplate.TGaussCannonHitUnit01,
     FxImpactLand = EffectTemplate.TGaussCannonHitLand01,
     OnImpact = function(self, targetType, targetEntity)
-        local radius = self.DamageData.DamageRadius
         
+        local radius = self.DamageData.DamageRadius
+        local pos = self:GetPosition()
+
         if radius > 0 then
-            local pos = self:GetPosition()
             local FriendlyFire = self.DamageData.DamageFriendly
             
             DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )

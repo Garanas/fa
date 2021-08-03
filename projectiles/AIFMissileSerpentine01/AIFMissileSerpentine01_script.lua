@@ -3,6 +3,23 @@
 --
 local AMissileSerpentineProjectile = import('/lua/aeonprojectiles.lua').AMissileSerpentineProjectile
 
+-- globals as upvalues for performance 
+local ForkThread = ForkThread
+local WaitSeconds = WaitSeconds
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+local EntityBeenDestroyed = EntityMethods.BeenDestroyed
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetTurnRate = ProjectileMethods.SetTurnRate
+local ProjectileGetCurrentTargetPosition = ProjectileMethods.GetCurrentTargetPosition
+local ProjectileSetCollisionShape = ProjectileMethods.SetCollisionShape
+local ProjectileSetLifetime = ProjectileMethods.SetLifetime
+
+-- attach for CTRL + SHIFT F replacement
+
 AIFMissileSerpentine01 = Class(AMissileSerpentineProjectile) {
     OnCreate = function(self)
         AMissileSerpentineProjectile.OnCreate(self)

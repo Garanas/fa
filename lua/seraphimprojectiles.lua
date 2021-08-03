@@ -571,7 +571,7 @@ SThunthoArtilleryShell2 = Class(MultiPolyTrailProjectile) {
     FxImpactProp = EffectTemplate.SThunderStormCannonHit,
     FxImpactUnderWater = {},
     FxImpactUnit = EffectTemplate.SThunderStormCannonUnitHit,
-    FxTrails = {},
+    FxTrails = false,
     PolyTrails = EffectTemplate.SThunderStormCannonProjectilePolyTrails,
     PolyTrailOffset = {0,0},
 }

@@ -20,6 +20,7 @@ local WaitSeconds = WaitSeconds
 -- moho functions as upvalue for performance
 local EntityMethods = _G.moho.entity_methods
 local EntityGetPosition = EntityMethods.GetPosition
+local EntityBeenDestroyed = EntityMethods.BeenDestroyed
 
 local ProjectileMethods = _G.moho.projectile_methods
 local ProjectileSetVelocity = ProjectileMethods.SetVelocity
@@ -27,6 +28,7 @@ local ProjectileSetMaxSpeed = ProjectileMethods.SetMaxSpeed
 local ProjectileTrackTarget = ProjectileMethods.TrackTarget
 local ProjectileStayUnderwater = ProjectileMethods.StayUnderwater
 local ProjectileChangeMaxZigZag = ProjectileMethods.ChangeMaxZigZag
+local ProjectileSetTurnRate = ProjectileMethods.SetTurnRate
 local ProjectileChangeZigZagFrequency = ProjectileMethods.ChangeZigZagFrequency
 local ProjectileGetCurrentTargetPosition = ProjectileMethods.GetCurrentTargetPosition
 

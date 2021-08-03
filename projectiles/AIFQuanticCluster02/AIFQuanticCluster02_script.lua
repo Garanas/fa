@@ -76,7 +76,7 @@ AIFQuanticCluster02 = Class(AQuantumCluster) {
             proj.PassDamageData(proj, damageData)
         end
 
-        DestroyEntity(self)
+        EntityDestroy(self)
     end,
 }
 

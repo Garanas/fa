@@ -3,6 +3,23 @@
 --
 local AMissileSerpentine02Projectile = import('/lua/aeonprojectiles.lua').AMissileSerpentine02Projectile
 
+-- globals as upvalues for performance 
+local ForkThread = ForkThread
+local WaitSeconds = WaitSeconds
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityGetPosition = EntityMethods.GetPosition
+local EntityBeenDestroyed = EntityMethods.BeenDestroyed
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileSetTurnRate = ProjectileMethods.SetTurnRate
+local ProjectileGetCurrentTargetPosition = ProjectileMethods.GetCurrentTargetPosition
+local ProjectileSetCollisionShape = ProjectileMethods.SetCollisionShape
+local ProjectileSetLifetime = ProjectileMethods.SetLifetime
+
+-- attach for CTRL + SHIFT F replacement
+
 AIFMissileTactical02 = Class(AMissileSerpentine02Projectile) {
 
     OnCreate = function(self)
@@ -29,16 +46,16 @@ AIFMissileTactical02 = Class(AMissileSerpentine02Projectile) {
             WaitSeconds(2)
             ProjectileSetTurnRate(self, 20)
         elseif dist > 64 and dist <= 107 then
-						-- Increase check intervals
-						ProjectileSetTurnRate(self, 30)
-						WaitSeconds(1.5)
+            -- Increase check intervals
+            ProjectileSetTurnRate(self, 30)
+            WaitSeconds(1.5)
             ProjectileSetTurnRate(self, 30)
         elseif dist > 21 and dist <= 53 then
-						-- Further increase check intervals
+            -- Further increase check intervals
             WaitSeconds(0.3)
             ProjectileSetTurnRate(self, 50)
-				elseif dist > 0 and dist <= 21 then
-						-- Further increase check intervals            
+        elseif dist > 0 and dist <= 21 then
+            -- Further increase check intervals            
             ProjectileSetTurnRate(self, 100)   
             KillThread(self.MoveThread)         
         end
