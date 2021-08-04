@@ -11,8 +11,10 @@
 local Entity = import('/lua/sim/Entity.lua').Entity
 local NukeDamage = import('/lua/sim/NukeDamage.lua').NukeAOE
 local Set = import('/lua/system/setutils.lua')
+
 local ParseEntityCategoryProperly = import('/lua/sim/CategoryUtils.lua').ParseEntityCategoryProperly
-local cachedPriorities = false
+local CacheAllDefaultPriorities = false
+local CacheAllWeaponPriorities = { } 
 
 local function ParsePriorities()
     local idlist = EntityCategoryGetUnitList(categories.ALLUNITS)
@@ -33,6 +35,9 @@ local function ParsePriorities()
             end
         end
     end
+
+    LOG(repr(finalPriorities))
+
     return finalPriorities
 end
 
@@ -45,6 +50,7 @@ Weapon = Class(moho.weapon_methods) {
 
         -- cache blueprint
         self.Blueprint = self:GetBlueprint()
+        LOG(repr(self.Blueprint))
 
         -- share trashbag with unit
         local unit = self.unit
@@ -398,37 +404,69 @@ Weapon = Class(moho.weapon_methods) {
 
     SetWeaponPriorities = function(self, priTable)
 
-        if not cachedPriorities then
-            cachedPriorities = ParsePriorities()
+        -- if we're here for the first time - cache the priorities we find in all weapon files
+        if not CacheAllDefaultPriorities then
+            CacheAllDefaultPriorities = ParsePriorities()
         end
-
+        
+        -- the 2nd argument is nil if we're initializing the weapon
         if not priTable then
-            local bp = self.Blueprint.TargetPriorities
-            if bp then
-                local priorityTable = {}
-                for k, v in bp do
-                    if cachedPriorities[v] then
-                        table.insert(priorityTable, cachedPriorities[v])
-                    else
-                        if string.find(v, '%(') then
-                            cachedPriorities[v] = ParseEntityCategoryProperly(v)
-                            table.insert(priorityTable, cachedPriorities[v])
+
+            -- find our weapon id and see if we did this weapon before
+            local blueprint = self.Blueprint 
+            local weaponId = blueprint.BlueprintId
+            LOG(weaponId)
+            local priorities = CacheAllWeaponPriorities[weaponId]
+
+            -- if we have not do this weapon before then do it and cache it
+            if not priorities then 
+                local bp = blueprint.TargetPriorities
+                if bp then
+                    local prioritiesCount = 0
+                    priorities = { }
+
+                    -- for each category
+                    for k, v in bp do
+
+                        -- if we have this category cached then add it
+                        if CacheAllDefaultPriorities[v] then
+                            prioritiesCount = prioritiesCount + 1
+                            priorities[prioritiesCount] = CacheAllDefaultPriorities[v]
+
+                        -- otherwise parse it and add it to the category cache
                         else
-                            cachedPriorities[v] = ParseEntityCategory(v)
-                            table.insert(priorityTable, cachedPriorities[v])
+                            if string.find(v, '%(') then
+                                CacheAllDefaultPriorities[v] = ParseEntityCategoryProperly(v)
+
+                                prioritiesCount = prioritiesCount + 1
+                                priorities[prioritiesCount] = CacheAllDefaultPriorities[v]
+                            else
+                                CacheAllDefaultPriorities[v] = ParseEntityCategory(v)
+
+                                prioritiesCount = prioritiesCount + 1
+                                priorities[prioritiesCount] = CacheAllDefaultPriorities[v]
+                            end
                         end
                     end
+
+                    -- store the resulting table
+                    LOG(repr(priorities))
+                    CacheAllWeaponPriorities[weaponId] = priorities
                 end
-                self:SetTargetingPriorities(priorityTable)
             end
+
+            -- set the default weapon priorities
+            self:SetTargetingPriorities(priorities)
         else
             if type(priTable[1]) == 'string' then
+                LOG("String pri table")
                 local priorityTable = {}
                 for k, v in priTable do
                     table.insert(priorityTable, ParseEntityCategory(v))
                 end
                 self:SetTargetingPriorities(priorityTable)
             else
+                LOG("non-string pri table")
                 self:SetTargetingPriorities(priTable)
             end
         end

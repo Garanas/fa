@@ -426,7 +426,7 @@ function PreModBlueprints(all_bps)
     -- Brute51: Modified code for ship wrecks and added code for SCU presets.
     -- removed the pairs() function call in the for loops for better efficiency and because it is not necessary.
 
-    for _, bp in all_bps.Unit do
+    for k, bp in all_bps.Unit do
 
         ExtractCloakMeshBlueprint(bp)
 
@@ -488,6 +488,10 @@ function PreModBlueprints(all_bps)
         end
 
         for i, w in bp.Weapon or {} do
+
+            -- used for caching weapon priorities on a per-unit and per-weapon basis
+            w.BlueprintId = tostring(k) .. " - " .. tostring(i)
+
             if w.TargetPriorities then
 
                 local newPriorities = {}
