@@ -19,6 +19,7 @@ local CreateTrail = CreateTrail
 local CreateEmitterOnEntity = CreateEmitterOnEntity
 
 -- math functions as upvalues for performance
+local MathFloor = _G.math.floor
 local MathMin = _G.math.min
 local MathMax = _G.math.max 
 
@@ -118,6 +119,17 @@ local NukeProjectileOnImpactCategories = categories.PROJECTILE * categories.ANTI
 
 -- Nukes
 NukeProjectile = Class(NullShell) {
+
+    OnCreate = function(self)
+        NullShell.OnCreate(self)
+
+        -- set ambient sound if available
+        local ambientSound = self.Blueprint.Audio.ExistLoop
+        if ambientSound then
+            EntitySetAmbientSound(self, ambientSound, nil)
+        end
+    end,
+
     MovementThread = function(self)
         local army = self.Army
         local launcher = self.Launcher
@@ -162,17 +174,20 @@ NukeProjectile = Class(NullShell) {
     end,
 
     GetSquaredDistanceToTarget = function(self)
-        local tpos = ProjectileGetCurrentTargetPosition(self, )
+        local tpos = ProjectileGetCurrentTargetPosition(self)
         local mpos = EntityGetPosition(self)
         return VDist2Sq(mpos[1], mpos[3], tpos[1], tpos[3])
     end,
 
     CreateEffects = function(self, EffectTable, army, scale)
-        if not EffectTable then return end
-        for k, v in EffectTable do
-            local emit = CreateAttachedEmitter(self, -1, army, v)
-            EmitterScaleEmitter(emity, scale)
-            self.Trash:Add(emit)
+        if EffectTable then 
+            local trash = self.Trash
+            EffectScale = EffectScale or 1
+            for k, v in EffectTable do
+                local emit = CreateEmitterAtEntity(self,army,v)
+                EmitterScaleEmitter(emit, EffectScale)
+                TrashAdd(trash, emit)
+            end
         end
     end,
 
@@ -373,12 +388,14 @@ OnWaterEntryEmitterProjectile = Class(Projectile) {
 
         local army = self.Army
         local fxTrails = self.FxTrails
-        for i in fxTrails do
-            local fxTrailScale = self.FxTrailScale
-            local fxTrailOffset = self.FxTrailOffset
-            local emit = CreateEmitterOnEntity(self, army, fxTrails[i])
-            EmitterScaleEmitter(emit, fxTrailScale)
-            EmitterOffsetEmitter(emit, 0, 0, fxTrailOffset)
+        if fxTrails then 
+            for i in fxTrails do
+                local fxTrailScale = self.FxTrailScale
+                local fxTrailOffset = self.FxTrailOffset
+                local emit = CreateEmitterOnEntity(self, army, fxTrails[i])
+                EmitterScaleEmitter(emit, fxTrailScale)
+                EmitterOffsetEmitter(emit, 0, 0, fxTrailOffset)
+            end
         end
         local polyTrail = self.PolyTrail
         if polyTrail then

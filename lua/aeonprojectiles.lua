@@ -713,7 +713,7 @@ AAAQuantumDisplacementCannonProjectile = Class(NullShell) {
         if fxTrails then 
             for i in fxTrails do
                 count = count + 1
-                trailEmitters[count] = CreateEmitterOnEntity(self, army, fxTrails[i]))
+                trailEmitters[count] = CreateEmitterOnEntity(self, army, fxTrails[i])
             end
         end
     end,
@@ -764,6 +764,11 @@ AQuantumWarheadProjectile = Class(NukeProjectile, MultiCompositeEmitterProjectil
     FxImpactUnit = false,
     FxImpactLand = false,
     FxImpactUnderWater = false,
+
+    OnCreate = function(self)
+        NukeProjectile.OnCreate(self)
+        MultiCompositeEmitterProjectile.OnCreate(self)
+    end,
 }
 
 --------------------------------------------------------------------------

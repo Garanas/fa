@@ -43,11 +43,13 @@ local CruiseMissileThread = function(self)
 
     local trails = { }
     local fxTrails = self.FxTrails
-    for i in fxTrails do
-        local emit = CreateEmitterOnEntity(self, army, fxTrails[i])
-        emit:ScaleEmitter(self.FxTrailScale)
-        emit:OffsetEmitter(0, 0, self.FxTrailOffset)
-        trails[i] = emit
+    if fxTrails then 
+        for i in fxTrails do
+            local emit = CreateEmitterOnEntity(self, army, fxTrails[i])
+            emit:ScaleEmitter(self.FxTrailScale)
+            emit:OffsetEmitter(0, 0, self.FxTrailOffset)
+            trails[i] = emit
+        end
     end
 
     self.trails = trails
@@ -114,11 +116,13 @@ MissileCruiseTerran01 = Class(Projectile) {
 
         local trails = { }
         local fxTrails = self.FxTrails
-        for i in fxTrails do
-            local emit = CreateEmitterOnEntity(self, army, fxTrails[i])
-            emit:ScaleEmitter(self.FxTrailScale)
-            emit:OffsetEmitter(0, 0, self.FxTrailOffset)
-            trails[i] = emit
+        if fxTrails then 
+            for i in fxTrails do
+                local emit = CreateEmitterOnEntity(self, army, fxTrails[i])
+                emit:ScaleEmitter(self.FxTrailScale)
+                emit:OffsetEmitter(0, 0, self.FxTrailOffset)
+                trails[i] = emit
+            end
         end
     
         self.trails = trails

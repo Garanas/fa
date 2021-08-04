@@ -159,13 +159,11 @@ CollisionBeam = Class(moho.CollisionBeamEntity) {
     end,
 
     CreateImpactEffects = function(self, army, EffectTable, EffectScale)
-        local emit = nil
-        EffectTable = EffectTable or {}
-        EffectScale = EffectScale or 1
-        for k, v in EffectTable do
-            emit = CreateEmitterAtBone(self,1,army,v)
-            if emit and EffectScale ~= 1 then
-                emit:ScaleEmitter(EffectScale)
+        if EffectTable then 
+            EffectScale = EffectScale or 1
+            for k, v in EffectTable do
+                local emit = CreateEmitterAtEntity(self,army,v)
+                EmitterScaleEmitter(emit, EffectScale)
             end
         end
     end,

@@ -35,8 +35,10 @@ TestProjectile01 = Class(Projectile)
         CreateTrail(self, -1, army, polytrail )
 
         --Emitter trail
-        for i in fxTrails do
-            CreateEmitterOnEntity(self,army, fxTrails[i])
+        if fxTrails then 
+            for i in fxTrails do
+                CreateEmitterOnEntity(self,army, fxTrails[i])
+            end
         end
 
         --Beam Trail

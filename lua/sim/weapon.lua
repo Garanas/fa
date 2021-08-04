@@ -43,12 +43,21 @@ Weapon = Class(moho.weapon_methods) {
 
     OnCreate = function(self)
 
+        -- cache blueprint
         self.Blueprint = self:GetBlueprint()
 
-        if not self.unit.Trash then
-            self.unit.Trash = TrashBag()
+        -- share trashbag with unit
+        local unit = self.unit
+        local trash = unit.Trash
+        if not trash then 
+            unit.Trash = TrashBag()
+            trash = unit.Trash
         end
-        self:SetValidTargetsForCurrentLayer(self.unit:GetCurrentLayer())
+
+        self.Trash = trash 
+
+
+        self:SetValidTargetsForCurrentLayer(unit:GetCurrentLayer())
         local bp = self.Blueprint
         if bp.Turreted == true then
             self:SetupTurret()
@@ -58,16 +67,18 @@ Weapon = Class(moho.weapon_methods) {
         self.DamageMod = 0
         self.DamageRadiusMod = 0
         self.NumTargets = 0
+
         local initStore = bp.InitialProjectileStorage
         if initStore and initStore > 0 then
-            if bp.MaxProjectileStorage and bp.MaxProjectileStorage < initStore then
-                initStore = bp.MaxProjectileStorage
+            local maxProjectileStorage = bp.MaxProjectileStorage
+            if maxProjectileStorage and maxProjectileStorage < initStore then
+                initStore = maxProjectileStorage
             end
             local nuke = false
             if bp.NukeWeapon then
                 nuke = true
             end
-            self:ForkThread(self.AmmoThread, nuke, bp.InitialProjectileStorage)
+            self:ForkThread(self.AmmoThread, nuke, initStore)
         end
 
         self.CollideFriendly = bp.CollideFriendly == true

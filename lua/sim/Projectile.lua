@@ -119,45 +119,25 @@ Projectile = Class(ProjectileMethods, Entity) {
 
         -- store original blueprint for functions that need it
         self.Blueprint = blueprint
+        self.BlueprintAudio = blueprint.Audio
 
         -- store values for direct access to prevent hashing / engine calls
         self.Army = EntityGetArmy(self)
         self.Launcher = ProjectileGetLauncher(self)
 
+        -- used when colliding or taking damage, cached for efficiency
         self.BlueprintDoNotCollideList = blueprint.DoNotCollideList
         self.BlueprintDefenseMaxHealth = blueprint.Defense.MaxHealth or 1
 
-        local audio = blueprint.Audio
-        self.BlueprintAudioExistLoop = audio.ExistLoop
-        self.BlueprintAudioExitWater = audio.ExitWater
-        self.BlueprintAudioEnterWater = audio.EnterWater
-
-        local physics = blueprint.Physics
-        self.BlueprintPhysicsTrackTargetGround = physics.TrackTargetGround
-        self.BlueprintPhysicsOnLostTargetLifetime = physics.OnLostTargetLifetime
-
         -- allocate damage data
-        self.DamageData = {
-            DamageRadius = false,
-            DamageAmount = false,
-            DamageType = false,
-            DamageFriendly = false,
-            MetaImpactAmount = false,
-            MetaImpactRadius = false,
-        }
+        self.DamageData = { }
 
         -- set original health
         EntitySetMaxHealth(self, self.BlueprintDefenseMaxHealth)
         EntitySetHealth(self, self, self.BlueprintDefenseMaxHealth) -- 2nd self is instigator
 
-        -- set ambient sound if available
-        local ambientSound = self.BlueprintAudioExistLoop
-        if ambientSound then
-            EntitySetAmbientSound(self, ambientSound, nil)
-        end
-
         -- update target if we track
-        if self.BlueprintPhysicsTrackTargetGround then
+        if blueprint.Physics.TrackTargetGround then
             local pos = ProjectileGetCurrentTargetPosition(self)
             pos[2] = GetSurfaceHeight(pos[1], pos[3])
             ProjectileSetNewTargetGround(self, pos)
@@ -170,27 +150,27 @@ Projectile = Class(ProjectileMethods, Entity) {
     -- receive damage data as deep-copy
     -- PERFORMANCE-TODO: Does this need to be a deep-copy?
     PassDamageData = function(self, DamageData)
+        -- only copy data that is present
+        local SelfDamageData = self.DamageData
+        for k, value in DamageData do 
+            SelfDamageData[k] = value
+        end
 
-        self.DamageData = DamageData
+        -- original approach to copying data
+        -- self.DamageData.DamageRadius = DamageData.DamageRadius
+        -- self.DamageData.DamageAmount = DamageData.DamageAmount
+        -- self.DamageData.DamageType = DamageData.DamageType
+        -- self.DamageData.DamageFriendly = DamageData.DamageFriendly
+        -- self.DamageData.CollideFriendly = DamageData.CollideFriendly
+        -- self.DamageData.DoTTime = DamageData.DoTTime
+        -- self.DamageData.DoTPulses = DamageData.DoTPulses
+        -- self.DamageData.MetaImpactAmount = DamageData.MetaImpactAmount
+        -- self.DamageData.MetaImpactRadius = DamageData.MetaImpactRadius
+        -- self.DamageData.Buffs = DamageData.Buffs
+        -- self.DamageData.ArtilleryShieldBlocks = DamageData.ArtilleryShieldBlocks
 
-        -- local SelfDamageData = self.DamageData
-        -- for k, value in DamageData do 
-        --     SelfDamageData[k] = value
-        -- end
-
-        self.CollideFriendly = DamageData.CollideFriendly
-        -- SelfDamageData.DamageRadius = DamageData.DamageRadius
-        -- SelfDamageData.DamageAmount = DamageData.DamageAmount
-        -- SelfDamageData.DamageType = DamageData.DamageType
-        -- SelfDamageData.DamageFriendly = DamageData.DamageFriendly
-        -- SelfDamageData.CollideFriendly = DamageData.CollideFriendly
-        -- SelfDamageData.DoTTime = DamageData.DoTTime
-        -- SelfDamageData.DoTPulses = DamageData.DoTPulses
-        -- SelfDamageData.MetaImpactAmount = DamageData.MetaImpactAmount
-        -- SelfDamageData.MetaImpactRadius = DamageData.MetaImpactRadius
-        -- SelfDamageData.Buffs = DamageData.Buffs
-        -- SelfDamageData.ArtilleryShieldBlocks = DamageData.ArtilleryShieldBlocks
-        -- SelfDamageData.InitialDamageAmount = DamageData.InitialDamageAmount
+        -- additional copy
+        self.CollideFriendly = SelfDamageData.CollideFriendly
     end,
 
     DoDamage = function(self, instigator, DamageData, targetEntity)
@@ -257,7 +237,7 @@ Projectile = Class(ProjectileMethods, Entity) {
 
         -- check for specific do-not-collide entities, such as for strategic missiles not hitting air
         for _, p in {{self, other}, {other, self}} do
-            local dnc = p[1].Blueprint.DoNotCollideList
+            local dnc = p[1].BlueprintDoNotCollideList
             if dnc then
                 for _, v in dnc do
                     if EntityCategoryContains(categories[v], p[2]) then
@@ -332,16 +312,18 @@ Projectile = Class(ProjectileMethods, Entity) {
 
         -- create the emitters
         local emit
-        for _, v in EffectTable do
+        if EffectTable then 
+            for _, v in EffectTable do
 
-            -- construct emitter
-            if fxImpactTrajectoryAligned then
-                emit = CreateEmitterAtBone(self, -2, army, v)
-            else
-                emit = CreateEmitterAtEntity(self, army, v)
+                -- construct emitter
+                if fxImpactTrajectoryAligned then
+                    emit = CreateEmitterAtBone(self, -2, army, v)
+                else
+                    emit = CreateEmitterAtEntity(self, army, v)
+                end
+
+                EmitterScaleEmitter(emit, EffectScale)
             end
-
-            EmitterScaleEmitter(emit, EffectScale)
         end
     end,
 
@@ -417,16 +399,16 @@ Projectile = Class(ProjectileMethods, Entity) {
         --  'ProjectileUnderWater
         local ImpactEffects = false
         local ImpactEffectScale = 1
-        local bp = self.Blueprint
+        local blueprint = self.Blueprint
 
         -- Sounds for all other impacts, ie: Impact<TargetTypeName>
-        local bpAud = bp.Audio
-        local snd = bpAud['Impact'..targetType]
+        local blueprintAudio = self.BlueprintAudio
+        local snd = blueprintAudio['Impact' .. targetType]
         if snd then
             EntityPlaySound(self, snd)
             -- Generic Impact Sound
-        elseif bpAud.Impact then
-            EntityPlaySound(self, bpAud.Impact)
+        elseif blueprintAudio.Impact then
+            EntityPlaySound(self, blueprintAudio.Impact)
         end
 
         -- ImpactEffects
@@ -468,12 +450,12 @@ Projectile = Class(ProjectileMethods, Entity) {
         ImpactEffects = ImpactEffects or { }
         ImpactEffectScale = ImpactEffectScale or 1
 
-        local BlueprintDisplayImpactEffects = bp.Display.ImpactEffects
+        local BlueprintDisplayImpactEffects = blueprint.Display.ImpactEffects
         local TerrainEffects = self.GetTerrainEffects(self, targetType, BlueprintDisplayImpactEffects.Type)
         self.CreateImpactEffects(self, army, ImpactEffects, ImpactEffectScale)
         self.CreateTerrainEffects(self, army, TerrainEffects, BlueprintDisplayImpactEffects.Scale or 1)
 
-        local timeout = bp.Physics.ImpactTimeout
+        local timeout = blueprint.Physics.ImpactTimeout
         if timeout and targetType == 'Terrain' then
             TrashBagAdd(self.Trash, ForkThread(self.ImpactTimeoutThread, self, timeout))
         else
@@ -502,12 +484,13 @@ Projectile = Class(ProjectileMethods, Entity) {
             -- Check for valid target
             for k, v in data.Buffs do
                 if v.Add.OnImpact == true then
-                    if v.AppliedToTarget ~= true or (v.Radius and v.Radius > 0) then
+                    local radius = v.radius
+                    if v.AppliedToTarget ~= true or (radius and radius > 0) then
                         target = self.Launcher
                     end
                     -- Check for target validity
                     if target and IsUnit(target) then
-                        if v.Radius and v.Radius > 0 then
+                        if radius and radius > 0 then
                             -- This is a radius buff
                             -- get the position of the projectile
                             target:AddBuff(v, self:GetPosition())
@@ -538,17 +521,18 @@ Projectile = Class(ProjectileMethods, Entity) {
 
     -- when the projectile exits the water
     OnExitWater = function(self)
-        local bp = self.BlueprintAudioExitWater
-        if bp then
-            self:PlaySound(bp)
-        end
+        -- no projectile blueprint has this value set
+        -- local bp = self.Blueprint.Audio.ExitWater
+        -- if bp then
+        --     self:PlaySound(bp)
+        -- end
     end,
 
     -- when the projectile enters the water (think about torpedo bombers)
     OnEnterWater = function(self)
-        local bp = self.BlueprintAudioEnterWater
-        if bp then
-            self:PlaySound(bp)
+        local snd = self.BlueprintAudio.EnterWater
+        if snd then
+            self:PlaySound(snd)
         end
     end,
 
@@ -581,8 +565,9 @@ Projectile = Class(ProjectileMethods, Entity) {
     end,
 
     OnLostTarget = function(self)
-        if self.BlueprintPhysicsTrackTarget then
-            ProjectileSetLifetime(self, self.BlueprintPhysicsOnLostTargetLifetime or 0.5)
+        local physics = self.Blueprint.Physics
+        if physics.TrackTarget then
+            ProjectileSetLifetime(self, physics.OnLostTargetLifetime)
         end
     end,
 }

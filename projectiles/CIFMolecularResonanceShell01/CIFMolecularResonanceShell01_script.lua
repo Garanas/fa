@@ -42,11 +42,11 @@ CIFMolecularResonanceShell01 = Class(CIFMolecularResonanceShell) {
 	end,
 	
     CreateImpactEffects = function( self, army, EffectTable, EffectScale )
-        local emit = nil
-        for k, v in EffectTable do
-            emit = CreateEmitterAtEntity(self,army,v)
-            if emit and EffectScale ~= 1 then
-                emit:ScaleEmitter(EffectScale or 1)
+        if EffectTable then 
+            EffectScale = EffectScale or 1
+            for k, v in EffectTable do
+                local emit = CreateEmitterAtEntity(self,army,v)
+                EmitterScaleEmitter(emit, EffectScale)
             end
         end
     end,

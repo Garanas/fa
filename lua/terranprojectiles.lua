@@ -71,6 +71,11 @@ TIFMissileNuke = Class(NukeProjectile, SingleBeamProjectile) {
     FxImpactUnit = false,
     FxImpactLand = false,
     FxImpactUnderWater = false,
+
+    OnCreate = function(self)
+        NukeProjectile.OnCreate(self)
+        SingleBeamProjectile.OnCreate(self)
+    end,
 }
 
 TIFTacticalNuke = Class(EmitterProjectile) {
@@ -123,7 +128,7 @@ TArtilleryAntiMatterProjectile = Class(SinglePolyTrailProjectile) {
         local radius = data.DamageRadius
         local FriendlyFire = data.DamageFriendly
 
-        local pos = EntityGetPosition(self)()
+        local pos = EntityGetPosition(self)
         
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
@@ -252,7 +257,7 @@ TDFGaussCannonProjectile = Class(TDFGeneralGaussCannonProjectile) {
         local radius = data.DamageRadius
         local FriendlyFire = data.DamageFriendly
 
-        local pos = EntityGetPosition(self)()
+        local pos = EntityGetPosition(self)
 
         if radius > 0 then
             DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
@@ -286,7 +291,7 @@ TDFShipGaussCannonProjectile = Class(TDFGeneralGaussCannonProjectile) { -- UES03
         local FriendlyFire = data.DamageFriendly
         
         if radius > 0 then
-            local pos = EntityGetPosition(self)()
+            local pos = EntityGetPosition(self)
             
             DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
             DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
@@ -319,7 +324,7 @@ TDFLandGaussCannonProjectile = Class(TDFGeneralGaussCannonProjectile) { -- fatbo
         local FriendlyFire = data.DamageFriendly
         
         if radius > 0 then
-            local pos = EntityGetPosition(self)()
+            local pos = EntityGetPosition(self)
             
             DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
             DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
@@ -381,7 +386,7 @@ TIFSmallYieldNuclearBombProjectile = Class(EmitterProjectile) { -- strategic bom
         local radius = data.DamageRadius
         local FriendlyFire = data.DamageFriendly
 
-        local pos = EntityGetPosition(self)()
+        local pos = EntityGetPosition(self)
         
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
@@ -416,7 +421,7 @@ TLaserBotProjectile = Class(MultiPolyTrailProjectile) { -- ACU
         local radius = data.DamageRadius
         local FriendlyFire = data.DamageFriendly
 
-        local pos = EntityGetPosition(self)()
+        local pos = EntityGetPosition(self)
         
         data.DamageAmount = data.DamageAmount - 2 -- doesn't work when OCing structure/ACU
         
@@ -524,10 +529,12 @@ TMissileCruiseProjectile = Class(SingleBeamProjectile) {
     FxImpactUnderWater = false,
 
     CreateImpactEffects = function(self, army, EffectTable, EffectScale)
-        EffectScale = EffectScale or 1
-        for k, v in EffectTable do
-            local emit = CreateEmitterAtEntity(self,army,v)
-            EmitterScaleEmitter(emit, EffectScale)
+        if EffectTable then 
+            EffectScale = EffectScale or 1
+            for k, v in EffectTable do
+                local emit = CreateEmitterAtEntity(self,army,v)
+                EmitterScaleEmitter(emit, EffectScale)
+            end
         end
     end,
 }
@@ -551,7 +558,7 @@ TMissileCruiseProjectile02 = Class(SingleBeamProjectile) {
         local radius = data.DamageRadius
         local FriendlyFire = data.DamageFriendly
         
-        local pos = EntityGetPosition(self)()
+        local pos = EntityGetPosition(self)
 
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
@@ -567,11 +574,12 @@ TMissileCruiseProjectile02 = Class(SingleBeamProjectile) {
     end,
 
     CreateImpactEffects = function(self, army, EffectTable, EffectScale)
-
-        EffectScale = EffectScale or 1 
-        for k, v in EffectTable do
-            local emit = CreateEmitterAtEntity(self,army,v)
-            EmitterScaleEmitter(emit, EffectScale)
+        if EffectTable then 
+            EffectScale = EffectScale or 1
+            for k, v in EffectTable do
+                local emit = CreateEmitterAtEntity(self,army,v)
+                EmitterScaleEmitter(emit, EffectScale)
+            end
         end
     end,
 }
@@ -599,7 +607,7 @@ TMissileCruiseSubProjectile = Class(SingleBeamProjectile) {
         local radius = data.DamageRadius
         local FriendlyFire = data.DamageFriendly
         
-        local pos = EntityGetPosition(self)()
+        local pos = EntityGetPosition(self)
         
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
@@ -861,7 +869,7 @@ TIonizedPlasmaGatlingCannon = Class(SinglePolyTrailProjectile) { -- percival
     FxImpactUnderWater = false,
     
     OnImpact = function(self, targetType, targetEntity)
-        local pos = EntityGetPosition(self)()
+        local pos = EntityGetPosition(self)
 
         local army = self.Army
         local data = self.DamageData
@@ -901,7 +909,7 @@ THeavyPlasmaGatlingCannon = Class(SinglePolyTrailProjectile) { -- ravager
         local radius = data.DamageRadius
         local FriendlyFire = data.DamageFriendly
 
-        local pos = EntityGetPosition(self)()
+        local pos = EntityGetPosition(self)
         
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )

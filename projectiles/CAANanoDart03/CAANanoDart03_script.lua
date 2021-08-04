@@ -28,10 +28,13 @@ local UpdateThread = function(self)
     ProjectileSetMaxSpeed(self, 10)
     ProjectileSetBallisticAcceleration(self, -0.2)
 
-    local army = self.Army
+
     local fxTrails = self.FxTrails
-    for i in fxTrails do
-        CreateEmitterOnEntity(self, army, fxTrails[i])
+    if fxTrails then 
+        local army = self.Army
+        for i in fxTrails do
+            CreateEmitterOnEntity(self, army, fxTrails[i])
+        end
     end
 
     WaitSeconds(0.25)
