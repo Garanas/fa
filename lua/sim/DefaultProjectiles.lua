@@ -30,6 +30,7 @@ local EntityGetHealth = EntityMethods.GetHealth
 local EntityPlaySound = EntityMethods.PlaySound
 local EntityBeenDestroyed = EntityMethods.BeenDestroyed
 local EntityCreateProjectile = EntityMethods.CreateProjectile
+local EntitySetAmbientSound = EntityMethods.SetAmbientSound
 
 local ProjectileMethods = _G.moho.projectile_methods
 local ProjectileSetAcceleration = ProjectileMethods.SetAcceleration
@@ -210,7 +211,7 @@ NukeProjectile = Class(NullShell) {
             -- create the entity
             local effectEntity = EntityCreateProjectile(self, self.effectEntityPath, 0, 0, 0, nil, nil, nil)
             ProjectileSetCollision(effectEntity, false)
-            ForkThread(effectEntity.Trash, effectEntity.EffectThread, effectEntity)
+            TrashAdd(effectEntity.Trash, ForkThread(effectEntity.EffectThread, effectEntity))
             TrashAdd(self.Trash, ForkThread(self.ForceThread, self))
 
             -- allow other nukes to toy with the entity

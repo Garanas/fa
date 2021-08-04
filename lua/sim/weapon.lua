@@ -476,7 +476,7 @@ Weapon = Class(moho.weapon_methods) {
                 end
             end
 
-            -- set the default weapon priorities
+            -- set weapon priorities. Note that if a weapon / unit doesn't have the table then it remains nil
             if priorities then 
                 self:SetTargetingPriorities(priorities)
             end
