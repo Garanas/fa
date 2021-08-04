@@ -7,6 +7,7 @@ CAANanoDartProjectile03 = import('/lua/cybranprojectiles.lua').CAANanoDartProjec
 -- globals as upvalues for performance 
 local Random = Random
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateEmitterOnEntity = CreateEmitterOnEntity
 
@@ -45,7 +46,7 @@ end
 CAANanoDart01 = Class(CAANanoDartProjectile03) {
    OnCreate = function(self)
         CAANanoDartProjectile03.OnCreate(self)
-        self.Trash:Add(ForkThread(UpdateThread, self))
+        TrashAdd(self.Trash, ForkThread(UpdateThread, self))
    end,
 }
 

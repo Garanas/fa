@@ -4,6 +4,7 @@ local Projectile = import('/lua/sim/projectile.lua').Projectile
 -- globals as upvalues for performance 
 local Warp = Warp
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local GetTerrainHeight = GetTerrainHeight
 local GetTerrainTypeOffset = GetTerrainTypeOffset
@@ -36,7 +37,7 @@ local StartSinking = function(self, targetEntity, targetBone)
     local seafloor = GetTerrainHeight(pos[1], pos[3]) + GetTerrainTypeOffset(pos[1], pos[3])
     if pos[2] <= seafloor then
         EntityDestroy(self)
-        ForkThread(self.callback)
+        TrashAdd(self.Trash, ForkThread(self.callback))
         return
     end
 
@@ -86,7 +87,7 @@ Sinker = Class(Projectile) {
         if targetType == 'Terrain' then
             EntityDestroy(self)
             if self.callback then
-                ForkThread(self.callback)
+                TrashAdd(self.Trash, ForkThread(self.callback))
             end    
         end
     end,

@@ -6,6 +6,7 @@ local CDFProtonCannonProjectile = import('/lua/cybranprojectiles.lua').CDFProton
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 
 local ImpactWaterThread = function(self)
@@ -17,7 +18,7 @@ CDFProtonCannon01 = Class(CDFProtonCannonProjectile) {
     
     OnCreate = function(self)
         CDFProtonCannonProjectile.OnCreate(self)
-        ForkThread(ImpactWaterThread, self)
+        TrashAdd(self.Trash, ForkThread(ImpactWaterThread, self))
     end,
 }
 TypeClass = CDFProtonCannon01

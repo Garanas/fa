@@ -6,6 +6,7 @@ local CAAMissileNaniteProjectile = import('/lua/cybranprojectiles.lua').CAAMissi
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local Random = Random
 
@@ -29,7 +30,7 @@ CAAMissileNanite01 = Class(CAAMissileNaniteProjectile) {
 
     OnCreate = function(self)
         CAAMissileNaniteProjectile.OnCreate(self)
-        ForkThread(UpdateThread, self)
+        TrashAdd(self.Trash, ForkThread(UpdateThread, self))
     end,
 
 }

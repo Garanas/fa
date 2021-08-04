@@ -9,6 +9,7 @@ local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateDecal = CreateDecal
 local CreateEmitterAtEntity = CreateEmitterAtEntity
@@ -53,21 +54,21 @@ CIFEMPFluxWarhead02 = Class(NullShell) {
 
         -- Mesh effects
         self.Plumeproj = EntityCreateProjectile(self, '/effects/EMPFluxWarhead/EMPFluxWarheadEffect01_proj.bp')
-        ForkThread(self.PlumeThread, self, self.Plumeproj, self.Plumeproj.Blueprint.Display.UniformScale)
-        ForkThread(self.PlumeVelocityThread, self, self.Plumeproj)
+        TrashAdd(self.Trash, ForkThread(self.PlumeThread, self, self.Plumeproj, self.Plumeproj.Blueprint.Display.UniformScale))
+        TrashAdd(self.Trash, ForkThread(self.PlumeVelocityThread, self, self.Plumeproj))
 
         self.Plumeproj2 = EntityCreateProjectile(self, '/effects/EMPFluxWarhead/EMPFluxWarheadEffect02_proj.bp')
-        ForkThread(self.PlumeThread, self, self.Plumeproj2, self.Plumeproj2.Blueprint.Display.UniformScale)
-        ForkThread(self.PlumeVelocityThread, self, self.Plumeproj2)
+        TrashAdd(self.Trash, ForkThread(self.PlumeThread, self, self.Plumeproj2, self.Plumeproj2.Blueprint.Display.UniformScale))
+        TrashAdd(self.Trash, ForkThread(self.PlumeVelocityThread, self, self.Plumeproj2))
 
         self.Plumeproj3 = EntityCreateProjectile(self, '/effects/EMPFluxWarhead/EMPFluxWarheadEffect03_proj.bp')
-        ForkThread(self.PlumeThread, self, self.Plumeproj3, self.Plumeproj3.Blueprint.Display.UniformScale)
-        ForkThread(self.PlumeVelocityThread, self, self.Plumeproj3)
+        TrashAdd(self.Trash, ForkThread(self.PlumeThread, self, self.Plumeproj3, self.Plumeproj3.Blueprint.Display.UniformScale))
+        TrashAdd(self.Trash, ForkThread(self.PlumeVelocityThread, self, self.Plumeproj3))
 
         CreateDecal(EntityGetPosition(self), RandomFloat(0,2*3.141592), 'nuke_scorch_001_albedo', '', 'Albedo', 28, 28, 500, 0, self.Army)
 
         -- Emitter Effects
-        ForkThread(self.EmitterEffectsThread, self, self.Plumeproj)
+        TrashAdd(self.Trash, ForkThread(self.EmitterEffectsThread, self, self.Plumeproj))
     end,
 
     EmitterEffectsThread = function(self, plume)

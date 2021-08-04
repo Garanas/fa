@@ -18,6 +18,7 @@ local SHeavyCavitationTorpedoFxTrails02 = EffectTemplates.SHeavyCavitationTorped
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateEmitterAtEntity = CreateEmitterAtEntity
 local CreateEmitterOnEntity = CreateEmitterOnEntity
@@ -110,7 +111,7 @@ SANHeavyCavitationTorpedo01 = Class(SHeavyCavitationTorpedo) {
         ProjectileStayUnderwater(self, true)
         ProjectileSetCollideSurface(self, false)
         ProjectileSetTurnRate(self, 360)
-        ForkThread(ProjectileSplit, self)
+        TrashAdd(self.Trash, ForkThread(ProjectileSplit, self))
     end,
 
     OnCreate = function(self,inWater)

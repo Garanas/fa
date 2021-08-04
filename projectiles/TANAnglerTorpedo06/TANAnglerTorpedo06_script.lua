@@ -32,7 +32,7 @@ TANAnglerTorpedo06 = Class(TTorpedoShipProjectile)
         ProjectileSetTurnRate(self, 240)
         ProjectileSetMaxSpeed(self, 18)
         --self:SetVelocity(0)
-        --ForkThread(self.MovementThread, self)
+        --TrashAdd(self.Trash, ForkThread(self.MovementThread, self))
     end,
 
 }

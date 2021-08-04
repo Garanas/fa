@@ -5,6 +5,7 @@ local ATorpedoShipProjectile = import('/lua/aeonprojectiles.lua').ATorpedoShipPr
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateEmitterAtEntity = CreateEmitterAtEntity
 
@@ -39,7 +40,7 @@ AANTorpedo02 = Class(ATorpedoShipProjectile) {
     OnCreate = function(self, inWater)
         ATorpedoShipProjectile.OnCreate(self, inWater)
         ProjectileSetMaxSpeed(self, 8)
-        ForkThread( self.MotionThread , self) 
+        TrashAdd(self.Trash, ForkThread( self.MotionThread , self)) 
     end,
 
     MotionThread = function(self)

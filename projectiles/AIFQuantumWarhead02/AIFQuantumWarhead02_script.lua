@@ -10,6 +10,7 @@ local CloudFlareEffects01 = import('/lua/EffectTemplates.lua').CloudFlareEffects
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateDecal = CreateDecal
 local CreateEmitterAtEntity = CreateEmitterAtEntity
@@ -92,9 +93,9 @@ AIFQuantumWarhead02 = Class(NullShell) {
         local army = self.Army 
         CreateLightParticle(self, -1, army, 200, 200, 'beam_white_01', 'ramp_quantum_warhead_flash_01')
 
-        ForkThread(ShakeAndBurnMe, self, army)
-        ForkThread(InnerCloudFlares, self, army)
-        ForkThread(DistortionField, self)
+        TrashAdd(self.Trash, ForkThread(ShakeAndBurnMe, self, army))
+        TrashAdd(self.Trash, ForkThread(InnerCloudFlares, self, army))
+        TrashAdd(self.Trash, ForkThread(DistortionField, self))
 
         for _, v in self.NormalEffects do
             CreateEmitterAtEntity(self, army, v)

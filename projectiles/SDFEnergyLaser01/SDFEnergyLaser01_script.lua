@@ -15,7 +15,7 @@ end
 SDFEnergyLaser01 = Class(SEnergyLaser) {
     OnCreate = function(self)
     	SEnergyLaser.OnCreate(self)
-        ForkThread( MovementThread , self)
+        TrashAdd(self.Trash, ForkThread( MovementThread , self))
     end,
 }
 

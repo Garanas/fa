@@ -6,6 +6,7 @@ local TDFGaussCannonProjectile = import('/lua/terranprojectiles.lua').TDFLandGau
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 
 -- moho functions as upvalue for performance
@@ -24,7 +25,7 @@ TDFGauss04 = Class(TDFGaussCannonProjectile) {
         if not inWater then
             ProjectileSetDestroyOnWater(self, true)
         else
-            ForkThread(DestroyOnWaterThread, self)
+            TrashAdd(self.Trash, ForkThread(DestroyOnWaterThread, self))
         end
     end,
 

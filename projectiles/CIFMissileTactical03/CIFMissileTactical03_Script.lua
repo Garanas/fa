@@ -12,6 +12,7 @@ local CLOATacticalMissileProjectile = import('/lua/cybranprojectiles.lua').CLOAT
 local VDist2Sq = VDist2Sq
 local DamageArea = DamageArea
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateDecal = CreateDecal
 local CreateLightParticle = CreateLightParticle
@@ -76,7 +77,7 @@ CIFMissileTactical03 = Class(CLOATacticalMissileProjectile) {
         ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 2.0)
         self.Split = false
         self.MovementTurnLevel = 1
-        ForkThread( MovementThread , self)
+        TrashAdd(self.Trash, ForkThread( MovementThread , self))
     end,
     
     PassDamageData = function(self, damageData)

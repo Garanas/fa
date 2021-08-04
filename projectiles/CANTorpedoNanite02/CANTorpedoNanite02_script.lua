@@ -15,6 +15,7 @@ local defaultDamage = import('/lua/sim/defaultdamage.lua')
 -- globals as upvalues for performance 
 local VDist2Sq = VDist2Sq
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 
 -- moho functions as upvalue for performance
@@ -55,7 +56,7 @@ CANTorpedoNanite02 = Class(CTorpedoShipProjectile) {
     TrailDelay = 0,
     OnCreate = function(self, inWater)
         CTorpedoShipProjectile.OnCreate(self, inWater)
-        ForkThread( MovementThread , self)
+        TrashAdd(self.Trash, ForkThread( MovementThread , self))
     end,     
          
     OnEnterWater = function(self)

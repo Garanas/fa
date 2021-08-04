@@ -6,6 +6,7 @@ local CDepthChargeProjectile = import('/lua/cybranprojectiles.lua').CDepthCharge
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 
 -- moho functions as upvalue for performance

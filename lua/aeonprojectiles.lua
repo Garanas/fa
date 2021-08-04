@@ -27,6 +27,34 @@ local EffectTemplate = import('/lua/EffectTemplates.lua')
 local NukeProjectile = DefaultProjectileFile.NukeProjectile
 local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
 
+-- globals as upvalues for performance 
+local Damage = Damage
+local DamageArea = DamageArea
+local DamageRing = DamageRing
+local ForkThread = ForkThread
+local WaitSeconds = WaitSeconds
+local CreateTrail = CreateTrail
+local CreateDecal = CreateDecal
+local CreateEmitterAtEntity = CreateEmitterAtEntity
+local CreateLightParticle = CreateLightParticle
+local CreateEmitterOnEntity = CreateEmitterOnEntity
+
+-- math functions as upvalues for performance
+local MathPi = _G.math.pi
+
+-- moho functions as upvalue for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityDestroy = EntityMethods.Destroy
+local EntityGetPosition = EntityMethods.GetPosition
+
+local ProjectileMethods = _G.moho.projectile_methods
+local ProjectileStayUnderwater = ProjectileMethods.StayUnderwater
+local ProjectileTrackTarget = ProjectileMethods.TrackTarget
+local ProjectileSetCollisionShape = ProjectileMethods.SetCollisionShape
+
+local TrashAdd = TrashBag.Add
+local TrashDestroy = TrashBag.Destroy
+
 --------------------------------------------------------------------------
 --  AEON ANTI-NUKE PROJECTILES
 --------------------------------------------------------------------------
@@ -39,7 +67,7 @@ ASaintAntiNuke = Class(SinglePolyTrailProjectile) {
     FxImpactNone = EffectTemplate.AMissileHit01,
     FxImpactLand = EffectTemplate.AMissileHit01,
     FxImpactProjectile = EffectTemplate.ASaintImpact01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 
 }
 
@@ -54,7 +82,7 @@ AIFBallisticMortarProjectile = Class(EmitterProjectile) {
     FxImpactProp =  EffectTemplate.AIFBallisticMortarHit01,
     FxImpactLand =  EffectTemplate.AIFBallisticMortarHit01,
     FxImpactAirUnit =  EffectTemplate.AIFBallisticMortarHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 AIFBallisticMortarProjectile02 = Class(MultiPolyTrailProjectile) {
@@ -66,8 +94,8 @@ AIFBallisticMortarProjectile02 = Class(MultiPolyTrailProjectile) {
     FxImpactUnit =  EffectTemplate.AIFBallisticMortarHitUnit02,
     FxImpactProp =  EffectTemplate.AIFBallisticMortarHitUnit02,
     FxImpactLand =  EffectTemplate.AIFBallisticMortarHitLand02,
-    FxImpactAirUnit =  {},
-    FxImpactUnderWater = {},
+    FxImpactAirUnit = false,
+    FxImpactUnderWater = false,
 }
 
 
@@ -83,7 +111,7 @@ AArtilleryProjectile = Class(EmitterProjectile) {
     FxImpactProp =  EffectTemplate.AQuarkBombHitUnit01,
     FxImpactLand =  EffectTemplate.AQuarkBombHitLand01,
     FxImpactAirUnit =  EffectTemplate.AQuarkBombHitAirUnit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 --------------------------------------------------------------------------
@@ -96,7 +124,7 @@ ABeamProjectile = Class(NullShell) {
     FxImpactUnit = EffectTemplate.ABeamHitUnit01,
     FxImpactProp = EffectTemplate.ABeamHitUnit01,
     FxImpactLand = EffectTemplate.ABeamHitLand01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 --------------------------------------------------------------------------
@@ -110,22 +138,23 @@ AGravitonBombProjectile = Class(SinglePolyTrailProjectile) { -- T1 bomber
     FxImpactUnit = EffectTemplate.ABombHit01,
     FxImpactProp = EffectTemplate.ABombHit01,
     FxImpactLand = EffectTemplate.ABombHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 
     OnImpact = function(self, targetType, targetEntity)
-        local radius = self.DamageData.DamageRadius
-        local pos = self:GetPosition()
-        local FriendlyFire = self.DamageData.DamageFriendly
+        local army = self.Army
+        local data = self.DamageData
+        local radius = data.DamageRadius
+        local FriendlyFire = data.DamageFriendly
+
+        local pos = EntityGetPosition(self)
         
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
 
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        data.DamageAmount = data.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local rotation = RandomFloat(0,2*math.pi)
-            local army = self.Army
-
+            local rotation = RandomFloat(0,2*MathPi)
             CreateDecal(pos, rotation, 'crater_radial01_albedo', '', 'Albedo', radius+1, radius+1, 150, 30, army)
         end
 
@@ -139,7 +168,7 @@ AGravitonBombProjectile = Class(SinglePolyTrailProjectile) { -- T1 bomber
 ACannonSeaProjectile = Class(SingleBeamProjectile) {
     BeamName = '/effects/emitters/cannon_munition_ship_aeon_beam_01_emit.bp',
 
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 
@@ -149,13 +178,16 @@ ACannonSeaProjectile = Class(SingleBeamProjectile) {
 ACannonTankProjectile = Class(SingleBeamProjectile) {
     BeamName = '/effects/emitters/cannon_munition_ship_aeon_beam_01_emit.bp',
     -- PolyTrails = {'cannon_polytrail_01'},
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 
     OnCreate = function(self)
         SingleBeamProjectile.OnCreate(self)
-        if self.PolyTrails then
-            for key, value in self.PolyTrails do
-                CreateTrail(self, -1, self.Army, value)
+
+        local polyTrails = self.PolyTrails
+        if polyTrails then
+            local army = self.Army
+            for key, value in polyTrails do
+                CreateTrail(self, -1, army, value)
             end
         end
     end,
@@ -165,35 +197,30 @@ ACannonTankProjectile = Class(SingleBeamProjectile) {
 --  AEON DEPTH CHARGE
 --------------------------------------------------------------------------
 ADepthChargeProjectile = Class(OnWaterEntryEmitterProjectile) {
-    FxInitial = {},
+    FxInitial = false,
     FxTrails = {'/effects/emitters/torpedo_munition_trail_01_emit.bp',},
     TrailDelay = 0,
     TrackTime = 0,
 
-    FxImpactLand = {},
+    FxImpactLand = false,
     FxImpactUnit = EffectTemplate.ADepthChargeHitUnit01,
     FxImpactProp = EffectTemplate.ADepthChargeHitUnit01,
     FxImpactUnderWater = EffectTemplate.ADepthChargeHitUnderWaterUnit01,
-    FxImpactNone = {},
+    FxImpactNone = false,
 
     OnCreate = function(self, inWater)
         OnWaterEntryEmitterProjectile.OnCreate(self)
-        --self:TrackTarget(true)
+        --ProjectileTrackTarget(self)
     end,
 
     OnEnterWater = function(self)
         OnWaterEntryEmitterProjectile.OnEnterWater(self)
 
-        for k, v in self.FxEnterWater do --splash
-            CreateEmitterAtEntity(self, self.Army ,v)
+        local army = self.Army
+        local fxEnterWater = self.FxEnterWater
+        for k, v in fxEnterWater do --splash
+            CreateEmitterAtEntity(self, army ,v)
         end
-
-        -- self:TrackTarget(false)
-        -- self:StayUnderwater(true)
-        -- self:SetTurnRate(0)
-        -- self:SetMaxSpeed(1)
-        -- self:SetVelocity(0, -0.25, 0)
-        -- self:SetVelocity(0.25)
     end,
 
     AddDepthCharge = function(self, tbl)
@@ -203,7 +230,7 @@ ADepthChargeProjectile = Class(OnWaterEntryEmitterProjectile) {
             Owner = self,
             Radius = tbl.Radius or 10,
         }
-        self.Trash:Add(self.MyDepthCharge)
+        TrashAdd(self.Trash, self.MyDepthCharge)
     end,
 
 }
@@ -238,7 +265,7 @@ AHighIntensityLaserProjectile = Class(SinglePolyTrailProjectile) {
     FxImpactUnit = EffectTemplate.AHighIntensityLaserHitUnit01,
     FxImpactProp = EffectTemplate.AHighIntensityLaserHitUnit01,
     FxImpactLand = EffectTemplate.AHighIntensityLaserHitLand01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 --------------------------------------------------------------------------
@@ -247,8 +274,8 @@ AHighIntensityLaserProjectile = Class(SinglePolyTrailProjectile) {
 AIMFlareProjectile = Class(EmitterProjectile) {
     FxTrails = EffectTemplate.AAntiMissileFlare,
     FxTrailScale = 1.0,
-    FxImpactUnit = {},
-    FxImpactAirUnit = {},
+    FxImpactUnit = false,
+    FxImpactAirUnit = false,
     FxImpactNone = EffectTemplate.AAntiMissileFlareHit,
     FxImpactProjectile = EffectTemplate.AAntiMissileFlareHit,
     FxOnKilled = EffectTemplate.AAntiMissileFlareHit,
@@ -258,17 +285,20 @@ AIMFlareProjectile = Class(EmitterProjectile) {
     FxUnderWaterHitScale = 0.4,
     FxAirUnitHitScale = 0.4,
     FxNoneHitScale = 0.4,
-    FxImpactLand = {},
-    FxImpactUnderWater = {},
+    FxImpactLand = false,
+    FxImpactUnderWater = false,
     DestroyOnImpact = false,
 
     OnImpact = function(self, TargetType, targetEntity)
         EmitterProjectile.OnImpact(self, TargetType, targetEntity)
         if TargetType == 'Terrain' or TargetType == 'Water' or TargetType == 'Prop' then
-            if self.Trash then
-                self.Trash:Destroy()
+
+            local trash = self.Trash
+            if trash then
+                TrashDestroy(trash)
             end
-            self:Destroy()
+
+            EntityDestroy(self)
         end
     end,
 }
@@ -284,7 +314,7 @@ ALaserBotProjectile = Class(SinglePolyTrailProjectile) {
     FxImpactUnit = EffectTemplate.ALaserBotHitUnit01,
     FxImpactProp = EffectTemplate.ALaserBotHitUnit01,
     FxImpactLand = EffectTemplate.ALaserBotHitLand01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 ALaserProjectile = Class(SingleBeamProjectile) {
@@ -295,7 +325,7 @@ ALaserProjectile = Class(SingleBeamProjectile) {
     FxImpactUnit = EffectTemplate.ALaserHitUnit01,
     FxImpactProp = EffectTemplate.ALaserHitUnit01,
     FxImpactLand = EffectTemplate.ALaserHitLand01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 AQuadLightLaserProjectile = Class(MultiPolyTrailProjectile) {
@@ -310,7 +340,7 @@ AQuadLightLaserProjectile = Class(MultiPolyTrailProjectile) {
     FxImpactUnit = EffectTemplate.ALightLaserHitUnit01,
     FxImpactProp = EffectTemplate.ALightLaserHitUnit01,
     FxImpactLand = EffectTemplate.ALightLaserHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 
     -- PolyTrails = EffectTemplate.Aeon_QuadLightLaserCannonProjectilePolyTrails,
     -- PolyTrailOffset = {0,0},
@@ -337,7 +367,7 @@ ALightLaserProjectile = Class(MultiPolyTrailProjectile) {
     FxImpactUnit = EffectTemplate.ALightLaserHitUnit01,
     FxImpactProp = EffectTemplate.ALightLaserHitUnit01,
     FxImpactLand = EffectTemplate.ALightLaserHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 ASonicPulsarProjectile = Class(EmitterProjectile){
@@ -372,7 +402,7 @@ AMissileAAProjectile = Class(SinglePolyTrailProjectile) {
     FxImpactProp = EffectTemplate.AMissileHit01,
     FxImpactNone = EffectTemplate.AMissileHit01,
     FxImpactLand = EffectTemplate.AMissileHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 AZealot02AAMissileProjectile = Class(SinglePolyTrailProjectile) {
@@ -383,7 +413,7 @@ AZealot02AAMissileProjectile = Class(SinglePolyTrailProjectile) {
     FxImpactProp = EffectTemplate.AMissileHit01,
     FxImpactNone = EffectTemplate.AMissileHit01,
     FxImpactLand = EffectTemplate.AMissileHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 AAALightDisplacementAutocannonMissileProjectile = Class(MultiPolyTrailProjectile) {
@@ -392,7 +422,7 @@ AAALightDisplacementAutocannonMissileProjectile = Class(MultiPolyTrailProjectile
     FxImpactProp = EffectTemplate.ALightDisplacementAutocannonMissileHit,
     FxImpactNone = EffectTemplate.ALightDisplacementAutocannonMissileHit,
     FxImpactLand = EffectTemplate.ALightDisplacementAutocannonMissileHit,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
     PolyTrails = EffectTemplate.ALightDisplacementAutocannonMissilePolyTrails,
     PolyTrailOffset = {0,0},
 }
@@ -408,23 +438,23 @@ AGuidedMissileProjectile = Class(SinglePolyTrailProjectile) {
     FxImpactProp = EffectTemplate.AMercyGuidedMissileSplitMissileHit,
     FxImpactNone = EffectTemplate.AMercyGuidedMissileSplitMissileHit,
     FxImpactLand = EffectTemplate.AMercyGuidedMissileSplitMissileHitLand,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 --------------------------------------------------------------------------
 --  AEON SUB-LAUNCHED CRUISE MISSILE PROJECTILES
 --------------------------------------------------------------------------
 AMissileCruiseSubProjectile = Class(EmitterProjectile) {
-    FxInitialAtEntityEmitter = {},
+    FxInitialAtEntityEmitter = false,
     FxUnderWaterTrail = {'/effects/emitters/missile_cruise_munition_underwater_trail_01_emit.bp',},
-    FxOnEntityEmitter = {},
+    FxOnEntityEmitter = false,
     FxExitWaterEmitter = EffectTemplate.DefaultProjectileWaterImpact,
     FxSplashScale = 0.65,
     ExitWaterTicks = 9,
     FxTrailOffset = -0.5,
 
     -- LAUNCH TRAILS
-    FxLaunchTrails = {},
+    FxLaunchTrails = false,
 
     -- TRAILS
     FxTrails = {'/effects/emitters/missile_cruise_munition_trail_01_emit.bp',},
@@ -433,10 +463,10 @@ AMissileCruiseSubProjectile = Class(EmitterProjectile) {
     FxImpactUnit = EffectTemplate.AMissileHit01,
     FxImpactProp = EffectTemplate.AMissileHit01,
     FxImpactLand = EffectTemplate.AMissileHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
     OnCreate = function(self)
         SinglePolyTrailProjectile.OnCreate(self)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
+        ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 1.0)
     end,
 }
 
@@ -451,27 +481,28 @@ AMissileSerpentineProjectile = Class(SingleCompositeEmitterProjectile) {
     FxImpactUnit = EffectTemplate.AMissileHit01,
     FxImpactProp = EffectTemplate.AMissileHit01,
     FxImpactLand = EffectTemplate.AMissileHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
     
     OnCreate = function(self)
         SingleCompositeEmitterProjectile.OnCreate(self)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
+        ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 1.0)
     end,
     
     OnImpact = function(self, targetType, targetEntity)
-        local radius = self.DamageData.DamageRadius
-        local pos = self:GetPosition()
-        local FriendlyFire = self.DamageData.DamageFriendly
+        local pos = EntityGetPosition(self)
+
+        local army = self.Army
+        local data = self.DamageData
+        local radius = data.DamageRadius
+        local FriendlyFire = data.DamageFriendly
         
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
 
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        data.DamageAmount = data.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local rotation = RandomFloat(0,2*math.pi)
-            local army = self.Army
-            
+            local rotation = RandomFloat(0,2*MathPi)
             CreateDecal(pos, rotation, 'scorch_001_albedo', '', 'Albedo', radius * 2, radius * 2, 300, 90, army)
         end
         
@@ -488,11 +519,11 @@ AMissileSerpentine02Projectile = Class(SingleCompositeEmitterProjectile) {
     FxImpactUnit = EffectTemplate.AMissileHit01,
     FxImpactProp = EffectTemplate.AMissileHit01,
     FxImpactLand = EffectTemplate.AMissileHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
     
     OnCreate = function(self)
         SingleCompositeEmitterProjectile.OnCreate(self)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
+        ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 1.0)
     end,
 
 }
@@ -508,19 +539,21 @@ AOblivionCannonProjectile = Class(EmitterProjectile) {
     FxImpactWater = EffectTemplate.AOblivionCannonHit01,
     
     OnImpact = function(self, targetType, targetEntity)
-        local radius = self.DamageData.DamageRadius
-        local pos = self:GetPosition()
-        local FriendlyFire = self.DamageData.DamageFriendly
+
+        local army = self.Army
+        local data = self.DamageData
+        local radius = data.DamageRadius
+        local FriendlyFire = data.DamageFriendly
+
+        local pos = EntityGetPosition(self)
         
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
 
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        data.DamageAmount = data.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local rotation = RandomFloat(0,2*math.pi)
-            local army = self.Army
-            
+            local rotation = RandomFloat(0,2*MathPi)
             CreateDecal(pos, rotation, 'crater_radial01_albedo', '', 'Albedo', radius+2, radius+2, 150, 50, army)
         end
         
@@ -538,9 +571,13 @@ AOblivionCannonProjectile02 = Class(SinglePolyTrailProjectile) {
     FxImpactWater = EffectTemplate.AOblivionCannonHit02,
 
     OnImpact = function(self, targetType, targetEntity)
+
+        local army = self.Army
+        local data = self.DamageData
         local radius = self.DamageData.DamageRadius
-        local pos = self:GetPosition()
         local FriendlyFire = self.DamageData.DamageFriendly
+
+        local pos = EntityGetPosition(self)
         
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
@@ -548,10 +585,8 @@ AOblivionCannonProjectile02 = Class(SinglePolyTrailProjectile) {
         self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
     
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local rotation = RandomFloat(0,2*math.pi)
-            local rotation2 = RandomFloat(0,2*math.pi)
-            local army = self.Army
-            
+            local rotation = RandomFloat(0,2*MathPi)
+            local rotation2 = RandomFloat(0,2*MathPi)
             CreateDecal(pos, rotation, 'crater_radial01_albedo', '', 'Albedo', radius+4, radius+4, 250, 100, army)
             CreateDecal(pos, rotation2, 'crater_radial01_albedo', '', 'Albedo', radius+4, radius+4, 250, 100, army)
         end
@@ -568,9 +603,12 @@ AOblivionCannonProjectile03 = Class(EmitterProjectile) {
     FxImpactWater = EffectTemplate.AOblivionCannonHit03,
     
     OnImpact = function(self, targetType, targetEntity)
+        local army = self.Army
+        local data = self.DamageData
         local radius = self.DamageData.DamageRadius
-        local pos = self:GetPosition()
         local FriendlyFire = self.DamageData.DamageFriendly
+
+        local pos = EntityGetPosition(self)
         
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
         DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
@@ -578,9 +616,7 @@ AOblivionCannonProjectile03 = Class(EmitterProjectile) {
         self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
         
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-            local rotation = RandomFloat(0,2*math.pi)
-            local army = self.Army
-            
+            local rotation = RandomFloat(0,2*MathPi)
             CreateDecal(pos, rotation, 'crater_radial01_albedo', '', 'Albedo', radius+1, radius+1, 150, 50, army)
         end
         
@@ -611,18 +647,19 @@ AQuantumDisruptorProjectile = Class(SinglePolyTrailProjectile) { -- ACU
     FxImpactLand = EffectTemplate.AQuantumDisruptorHit01,
     
     OnImpact = function(self, targetType, targetEntity)
-        local pos = self:GetPosition()
-        local FriendlyFire = self.DamageData.DamageFriendly
+        local army = self.Army
+        local data = self.DamageData
+        local FriendlyFire = data.DamageFriendly
+
+        local pos = EntityGetPosition(self)
         
         DamageArea( self, pos, 0.5, 1, 'Force', FriendlyFire )
         DamageArea( self, pos, 0.5, 1, 'Force', FriendlyFire )
         
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        data.DamageAmount = data.DamageAmount - 2
 
         if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' and targetType ~= 'Unit' then
-            local rotation = RandomFloat(0,2*math.pi)
-            local army = self.Army
-            
+            local rotation = RandomFloat(0,2*MathPi)           
             CreateDecal(pos, rotation, 'scorch_001_albedo', '', 'Albedo', 1, 1, 70, 20, army)
         end
 
@@ -636,7 +673,7 @@ AQuantumDisruptorProjectile = Class(SinglePolyTrailProjectile) { -- ACU
 AAAQuantumDisplacementCannonProjectile = Class(NullShell) {
 
     -- Projectile Effects
-    FxTrails = {},-- '/effects/emitters/oblivion_cannon_munition_01_emit.bp'},
+    FxTrails = false,-- '/effects/emitters/oblivion_cannon_munition_01_emit.bp'},
     PolyTrail = '/effects/emitters/quantum_displacement_cannon_polytrail_01_emit.bp',
 
     -- Impact Effects
@@ -653,42 +690,62 @@ AAAQuantumDisplacementCannonProjectile = Class(NullShell) {
     OnCreate = function(self)
         NullShell.OnCreate(self)
 
-        self.TrailEmitters = {}
+        self.TrailEmitters = { }
         self.CreateTrailFX(self)
         self:ForkThread(self.UpdateThread)
     end,
 
     CreateTrailFX = function(self)
-        if(self.PolyTrail) then
-            table.insert(self.TrailEmitters, CreateTrail(self, -1, self.Army, self.PolyTrail))
+
+        -- cache for performance
+        local count = 0
+        local army = self.Army
+        local polyTrail = self.PolyTrail
+        local fxTrails = self.FxTrails
+        local trailEmitters = self.TrailEmitters
+
+        -- create trial fx
+        if polyTrail then 
+            count = count + 1
+            trailEmitters[count] = CreateTrail(self, -1, army, polyTrail)
         end
-        for i in self.FxTrails do
-            table.insert(self.TrailEmitters, CreateEmitterOnEntity(self, self.Army, self.FxTrails[i]))
+
+        if fxTrails then 
+            for i in fxTrails do
+                count = count + 1
+                trailEmitters[count] = CreateEmitterOnEntity(self, army, fxTrails[i]))
+            end
         end
     end,
 
     CreateTeleportFX = function(self, army)
-        for i in self.FxTeleport do
-            CreateEmitterAtEntity(self, army, self.FxTeleport[i])
+        local fxTeleport = self.FxTeleport
+        for i in fxTeleport do
+            CreateEmitterAtEntity(self, army, fxTeleport[i])
         end
     end,
 
     DestroyTrailFX = function(self)
-        if self.TrailEmitters then
-            for k,v in self.TrailEmitters do
-                v:Destroy()
+        local trailEmitters = self.TrailEmitters
+        if trailEmitters then
+            for k,v in trailEmitters do
+                EntityDestroy(v)
                 v = nil
             end
         end
     end,
 
     UpdateThread = function(self)
+
+        -- cache for performance
+        local army = self.Army
+
         WaitSeconds(0.3)
         self.DestroyTrailFX(self)
-        self.CreateTeleportFX(self, self.Army)
-        local emit = CreateEmitterOnEntity(self, self.Army, self.FxInvisible)
+        self.CreateTeleportFX(self, army)
+        local emit = CreateEmitterOnEntity(self, army, self.FxInvisible)
         WaitSeconds(0.45)
-        emit:Destroy()
+        EntityDestroy(emit)
         self.CreateTeleportFX(self)
         self.CreateTrailFX(self)
     end,
@@ -704,9 +761,9 @@ AQuantumWarheadProjectile = Class(NukeProjectile, MultiCompositeEmitterProjectil
     PolyTrails = {'/effects/emitters/aeon_nuke_trail_emit.bp',},
 
     -- Hit Effects
-    FxImpactUnit = {},
-    FxImpactLand = {},
-    FxImpactUnderWater = {},
+    FxImpactUnit = false,
+    FxImpactLand = false,
+    FxImpactUnderWater = false,
 }
 
 --------------------------------------------------------------------------
@@ -721,26 +778,27 @@ AQuarkBombProjectile = Class(EmitterProjectile) { -- Strategic bomber
     FxImpactProp = EffectTemplate.AQuarkBombHitUnit01,
     FxImpactAirUnit = EffectTemplate.AQuarkBombHitAirUnit01,
     FxImpactLand = EffectTemplate.AQuarkBombHitLand01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 
     OnImpact = function(self, targetType, targetEntity)
-        CreateLightParticle(self, -1, self.Army, 26, 6, 'sparkle_white_add_08', 'ramp_white_02')
-        local pos = self:GetPosition()
-        local radius = self.DamageData.DamageRadius
-        local FriendlyFire = self.DamageData.DamageFriendly
-        
-        DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
-        DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
-        
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
-        
-        if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
 
+        local army = self.Army
+        local data = self.DamageData
+        local radius = data.DamageRadius
+        local FriendlyFire = data.DamageFriendly
+        
+        local pos = EntityGetPosition(self)
+
+        DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
+        DamageArea(self, pos, radius, 1, 'Force', FriendlyFire)
+        
+        data.DamageAmount = data.DamageAmount - 2
+
+        CreateLightParticle(self, -1, army, 26, 6, 'sparkle_white_add_08', 'ramp_white_02')
+        if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
             DefaultExplosion.CreateScorchMarkSplat(self, 3)
-            
             DamageRing(self, pos, 0.1, radius, 10, 'Fire', FriendlyFire, false)
-            self.DamageData.DamageAmount = self.DamageData.DamageAmount - 10
-            
+            data.DamageAmount = data.DamageAmount - 10
         end
 
         EmitterProjectile.OnImpact(self, targetType, targetEntity)
@@ -755,7 +813,7 @@ ARailGunProjectile = Class(EmitterProjectile) {
         '/effects/emitters/railgun_munition_trail_01_emit.bp'},
     FxTrailScale = 0,
     FxTrailOffset = 0,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 
@@ -774,20 +832,22 @@ AReactonCannonProjectile = Class(EmitterProjectile) { --SCU
     FxImpactLand = EffectTemplate.AReactonCannonHitLand01,
     
     OnImpact = function(self, targetType, targetEntity)
-        local pos = self:GetPosition()
-        local radius = self.DamageData.DamageRadius
-        local FriendlyFire = self.DamageData.DamageFriendly
+
+        local army = self.Army
+        local data = self.DamageData
+        local radius = data.DamageRadius
+        local FriendlyFire = data.DamageFriendly
         
-        self.DamageData.DamageAmount = self.DamageData.DamageAmount - 2
+        local pos = EntityGetPosition(self)
+
+        data.DamageAmount = data.DamageAmount - 2
         
         if radius == 0 then
             DamageArea( self, pos, 0.5, 1, 'Force', FriendlyFire )
             DamageArea( self, pos, 0.5, 1, 'Force', FriendlyFire )
             
             if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' and targetType ~= 'Unit' then
-                local rotation = RandomFloat(0,2*math.pi)
-                local army = self.Army
-                
+                local rotation = RandomFloat(0,2*MathPi)                
                 CreateDecal(pos, rotation, 'scorch_001_albedo', '', 'Albedo', 1, 1, 70, 20, army)
             end
             
@@ -796,9 +856,7 @@ AReactonCannonProjectile = Class(EmitterProjectile) { --SCU
             DamageArea( self, pos, radius, 1, 'Force', FriendlyFire )
             
             if targetType ~= 'Shield' and targetType ~= 'Water' and targetType ~= 'Air' and targetType ~= 'UnitAir' and targetType ~= 'Projectile' then
-                local rotation = RandomFloat(0,2*math.pi)
-                local army = self.Army
-                
+                local rotation = RandomFloat(0,2*MathPi)
                 CreateDecal(pos, rotation, 'scorch_001_albedo', '', 'Albedo', radius+2, radius+2, 100, 50, army)
             end
         end
@@ -851,7 +909,7 @@ AShieldDisruptorProjectile = Class(SinglePolyTrailProjectile) {
 --------------------------------------------------------------------------
 ARocketProjectile = Class(EmitterProjectile) {
 
-    FxInitial = {},
+    FxInitial = false,
     FxTrails = {'/effects/emitters/missile_sam_munition_trail_cybran_01_emit.bp',},
     FxTrailOffset = 0.5,
 
@@ -859,7 +917,7 @@ ARocketProjectile = Class(EmitterProjectile) {
     FxImpactUnit = EffectTemplate.AMissileHit01,
     FxImpactProp = EffectTemplate.AMissileHit01,
     FxImpactLand = EffectTemplate.AMissileHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 --------------------------------------------------------------------------
@@ -873,7 +931,7 @@ ASonicPulseProjectile = Class(SinglePolyTrailProjectile) {
     FxImpactUnit = EffectTemplate.ASonicPulseHitUnit01,
     FxImpactProp = EffectTemplate.ASonicPulseHitUnit01,
     FxImpactLand = EffectTemplate.ASonicPulseHitLand01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 -- Custom version of the sonic pulse battery projectile for flying units
@@ -885,7 +943,7 @@ ASonicPulseProjectile02 = Class(SinglePolyTrailProjectile) {
     FxImpactUnit = EffectTemplate.ASonicPulseHitUnit01,
     FxImpactProp = EffectTemplate.ASonicPulseHitUnit01,
     FxImpactLand = EffectTemplate.ASonicPulseHitLand01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
 }
 
 --------------------------------------------------------------------------
@@ -903,36 +961,37 @@ ATemporalFizzAAProjectile = Class(SingleCompositeEmitterProjectile) {
 --  AEON ABOVE WATER LAUNCHED TORPEDO
 --------------------------------------------------------------------------
 ATorpedoShipProjectile = Class(OnWaterEntryEmitterProjectile) {
-    FxInitial = {},
+    FxInitial = false,
     FxTrails = {'/effects/emitters/torpedo_munition_trail_01_emit.bp',},
     FxTrailScale = 1,
     TrailDelay = 0,
     TrackTime = 0,
 
     FxUnitHitScale = 1.25,
-    FxImpactLand = {},
+    FxImpactLand = false,
     FxImpactUnit = EffectTemplate.ATorpedoUnitHit01,
     FxImpactProp = EffectTemplate.ATorpedoUnitHit01,
     FxImpactUnderWater = EffectTemplate.DefaultProjectileUnderWaterImpact,
     FxImpactProjectile = EffectTemplate.ATorpedoUnitHit01,
     FxImpactProjectileUnderWater = EffectTemplate.DefaultProjectileUnderWaterImpact,
     FxKilled = EffectTemplate.ATorpedoUnitHit01,
-    FxImpactNone = {},
+    FxImpactNone = false,
 
     OnCreate = function(self,inWater)
         OnWaterEntryEmitterProjectile.OnCreate(self,inWater)
         -- if we are starting in the water then immediately switch to tracking in water
         if inWater == true then
-            self:TrackTarget(true):StayUnderwater(true)
+            ProjectileTrackTarget(self)
+            ProjectileStayUnderwater(self)
             self:OnEnterWater(self)
         else
-            self:TrackTarget(false)
+            ProjectileTrackTarget(self)
         end
     end,
 
     OnEnterWater = function(self)
         OnWaterEntryEmitterProjectile.OnEnterWater(self)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
+        ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 1.0)
     end,
 
 }
@@ -945,7 +1004,7 @@ ATorpedoSubProjectile = Class(EmitterProjectile) {
     FxTrails = {'/effects/emitters/torpedo_munition_trail_01_emit.bp',},
 
     -- Hit Effects
-    FxImpactLand = {},
+    FxImpactLand = false,
     FxUnitHitScale = 1.25,
     FxImpactUnit = EffectTemplate.ATorpedoUnitHit01,
     FxImpactProp = EffectTemplate.ATorpedoUnitHit01,
@@ -953,16 +1012,16 @@ ATorpedoSubProjectile = Class(EmitterProjectile) {
     FxImpactProjectileUnderWater = EffectTemplate.DefaultProjectileUnderWaterImpact,
 
     FxNoneHitScale = 1,
-    FxImpactNone = {},
+    FxImpactNone = false,
     OnCreate = function(self, inWater)
         EmitterProjectile.OnCreate(self, inWater)
-        self:SetCollisionShape('Sphere', 0, 0, 0, 1.0)
+        ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 1.0)
     end,
 
 }
 
 QuasarAntiTorpedoChargeSubProjectile = Class(MultiPolyTrailProjectile) {
-    FxTrails = {},
+    FxTrails = false,
     FxImpactLand = EffectTemplate.AQuasarAntiTorpedoHit,
     FxUnitHitScale = 1.25,
     FxImpactUnit = EffectTemplate.AQuasarAntiTorpedoHit,
@@ -990,7 +1049,7 @@ ABaseTempProjectile = Class(SinglePolyTrailProjectile) {
     FxImpactNone = EffectTemplate.AMissileHit01,
     FxImpactProjectile = EffectTemplate.ASaintImpact01,
     FxImpactProp = EffectTemplate.AMissileHit01,
-    FxImpactUnderWater = {},
+    FxImpactUnderWater = false,
     FxImpactUnit = EffectTemplate.AMissileHit01,
     FxTrails = {
         '/effects/emitters/aeon_laser_fxtrail_01_emit.bp',
@@ -1011,7 +1070,7 @@ AQuantumAutogun = Class(SinglePolyTrailProjectile) {
 
     PolyTrail = EffectTemplate.Aeon_DualQuantumAutoGunProjectileTrail,
     FxTrails = EffectTemplate.Aeon_DualQuantumAutoGunFxTrail,
-    FxImpactProjectile = {},
+    FxImpactProjectile = false,
 }
 
 --------------------------------------------------------------------------
@@ -1023,8 +1082,8 @@ AHeavyDisruptorCannonShell = Class(MultiPolyTrailProjectile) {
     FxImpactNone = EffectTemplate.Aeon_HeavyDisruptorCannonLandHit,
     FxImpactProp = EffectTemplate.Aeon_HeavyDisruptorCannonLandHit,
     FxImpactUnit = EffectTemplate.Aeon_HeavyDisruptorCannonUnitHit,
-    FxImpactUnderWater = {},
-    FxImpactProjectile = {},
+    FxImpactUnderWater = false,
+    FxImpactProjectile = false,
     FxTrails = EffectTemplate.Aeon_HeavyDisruptorCannonProjectileFxTrails,
     PolyTrails = EffectTemplate.Aeon_HeavyDisruptorCannonProjectileTrails,
 }
@@ -1033,22 +1092,22 @@ AHeavyDisruptorCannonShell = Class(MultiPolyTrailProjectile) {
 --  AEON TORPEDO CLUSTER
 --------------------------------------------------------------------------
 ATorpedoCluster = Class(ATorpedoShipProjectile) {
-    FxInitial = {},
-    FxTrails = {},
+    FxInitial = false,
+    FxTrails = false,
     PolyTrail = '',
     FxTrailScale = 1,
     TrailDelay = 0,
     TrackTime = 0,
 
     FxUnitHitScale = 1.25,
-    FxImpactLand = {},
+    FxImpactLand = false,
     FxImpactUnit = EffectTemplate.ATorpedoUnitHit01,
     FxImpactProp = EffectTemplate.ATorpedoUnitHit01,
     FxImpactUnderWater = EffectTemplate.ATorpedoUnitHitUnderWater01,
     FxImpactProjectile = EffectTemplate.ATorpedoUnitHit01,
     FxImpactProjectileUnderWater = EffectTemplate.ATorpedoUnitHitUnderWater01,
     FxKilled = EffectTemplate.ATorpedoUnitHit01,
-    FxImpactNone = {},
+    FxImpactNone = false,
 }
 
 --------------------------------------------------------------------------
@@ -1067,7 +1126,7 @@ ALightDisplacementAutoCannon = Class(ABaseTempProjectile) {
 --  AEON ARTILLERY FRAGMENTATION SENSOR SHELL
 --------------------------------------------------------------------------
 AArtilleryFragmentationSensorShellProjectile = Class(SinglePolyTrailProjectile) {
-    -- FxTrails = {},
+    -- FxTrails = false,
     FxTrails = EffectTemplate.Aeon_QuanticClusterProjectileTrails,
     PolyTrail = EffectTemplate.Aeon_QuanticClusterProjectilePolyTrail,
     FxImpactLand = EffectTemplate.Aeon_QuanticClusterHit,
@@ -1086,6 +1145,6 @@ AArtilleryFragmentationSensorShellProjectile02 = Class(AArtilleryFragmentationSe
 --  AEON ARTILLERY FRAGMENTATION SENSOR SHELL 03 (split 2)
 --------------------------------------------------------------------------
 AArtilleryFragmentationSensorShellProjectile03 = Class(AArtilleryFragmentationSensorShellProjectile) {
-    FxTrails = {},
+    FxTrails = false,
     PolyTrail = EffectTemplate.Aeon_QuanticClusterProjectilePolyTrail03,
 }

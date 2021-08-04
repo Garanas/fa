@@ -5,6 +5,7 @@ local CTorpedoShipProjectile = import('/lua/cybranprojectiles.lua').CTorpedoShip
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateEmitterAtEntity = CreateEmitterAtEntity
 
@@ -54,7 +55,7 @@ CANTorpedoMeson01 = Class(CTorpedoShipProjectile) {
         ProjectileSetTurnRate(self, 120)
         ProjectileSetMaxSpeed(self, 18)
         ProjectileSetVelocity(self, 3)
-        ForkThread(SpinUpThread, self)
+        TrashAdd(self.Trash, ForkThread(SpinUpThread, self))
     end,
 }
 

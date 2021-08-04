@@ -10,6 +10,7 @@ local EffectTemplate = import('/lua/EffectTemplates.lua')
 local VDist2Sq = VDist2Sq
 local DamageArea = DamageArea
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateDecal = CreateDecal
 
@@ -51,8 +52,7 @@ local SetTurnRateByDist = function(self)
         WaitSeconds(0.3)
         ProjectileSetTurnRate(self, 50)
     elseif dist > 0 and dist <= 10 * 10 then         
-        ProjectileSetTurnRate(self, 100)   
-        KillThread(self.MoveThread)         
+        ProjectileSetTurnRate(self, 100)      
     end
 end  
 
@@ -87,7 +87,7 @@ TIFMissileCruise05 = Class(TMissileCruiseProjectile) {
     OnCreate = function(self)
         TMissileCruiseProjectile.OnCreate(self)
         ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 2)
-        self.MoveThread = ForkThread(MovementThread, self)
+        TrashAdd(self.Trash, ForkThread(MovementThread, self))
     end,    
     
     OnImpact = function(self, targetType, targetEntity)

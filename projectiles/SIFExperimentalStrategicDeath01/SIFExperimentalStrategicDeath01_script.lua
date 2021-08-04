@@ -5,6 +5,7 @@ local EffectTemplate = import('/lua/EffectTemplates.lua')
 -- globals as upvalues for performance 
 local DamageArea = DamageArea
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateDecal = CreateDecal
 local CreateEmitterAtEntity = CreateEmitterAtEntity
@@ -61,8 +62,8 @@ SIFExperimentalStrategicDeath01 = Class(NullShell) {
         WaitSeconds(0.1)
         CreateLightParticle(self, -1, army, 30, 30, 'glow', 'ramp_blue_22')
         
-        ForkThread(ShakeAndBurnMe, self, army)
-        ForkThread(DistortionField, self)
+        TrashAdd(self.Trash, ForkThread(ShakeAndBurnMe, self, army))
+        TrashAdd(self.Trash, ForkThread(DistortionField, self))
 
         for k, v in self.NormalEffects do
             CreateEmitterAtEntity(self, army, v)

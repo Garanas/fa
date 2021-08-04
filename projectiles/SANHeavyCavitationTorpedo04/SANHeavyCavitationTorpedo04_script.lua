@@ -15,6 +15,7 @@ local EffectTemplate = import('/lua/EffectTemplates.lua')
 -- globals as upvalues for performance 
 local VDist2Sq = VDist2Sq
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateEmitterOnEntity = CreateEmitterOnEntity
 
@@ -52,7 +53,7 @@ SANHeavyCavitationTorpedo04 = Class(SHeavyCavitationTorpedo) {
     OnCreate = function(self)
             SHeavyCavitationTorpedo.OnCreate(self)
             ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 0.1)
-            ForkThread(PauseUntilTrack, self)
+            TrashAdd(self.Trash, ForkThread(PauseUntilTrack, self))
             CreateEmitterOnEntity(self,self.Army,EffectTemplate.SHeavyCavitationTorpedoFxTrails)
     end,
 }

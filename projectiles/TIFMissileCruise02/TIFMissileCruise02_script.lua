@@ -6,6 +6,7 @@ local TMissileCruiseSubProjectile = import('/lua/terranprojectiles.lua').TMissil
 -- globals as upvalues for performance 
 local VDist2Sq = VDist2Sq
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 
 -- moho functions as upvalue for performance
@@ -77,7 +78,7 @@ TIFMissileCruise02 = Class(TMissileCruiseSubProjectile) {
         TMissileCruiseSubProjectile.OnCreate(self)
         ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 2.0)
         self.MovementTurnLevel = 1
-        ForkThread( MovementThread , self)
+        TrashAdd(self.Trash, ForkThread( MovementThread , self))
     end,  
     
     OnExitWater = function(self)

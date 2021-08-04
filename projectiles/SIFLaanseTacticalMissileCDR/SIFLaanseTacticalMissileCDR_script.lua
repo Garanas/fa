@@ -13,6 +13,7 @@ local SLaanseTacticalMissile = import('/lua/seraphimprojectiles.lua').SLaanseTac
 -- globals as upvalues for performance 
 local VDist2Sq = VDist2Sq
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 
 -- moho functions as upvalue for performance
@@ -52,7 +53,6 @@ local SetTurnRateByDist = function(self)
     elseif dist > 0 and dist <= 10 * 10 then
         -- Further increase check intervals
         ProjectileSetTurnRate(self, 100)
-        KillThread(self.MoveThread)
     end
 end
 
@@ -71,7 +71,7 @@ SIFLaanseTacticalMissileCDR = Class(SLaanseTacticalMissile) {
     OnCreate = function(self)
         SLaanseTacticalMissile.OnCreate(self)
         ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 2)
-        self.MoveThread = ForkThread(MovementThread, self)
+        TrashAdd(self.Trash, ForkThread(MovementThread, self))
     end,
 }
 TypeClass = SIFLaanseTacticalMissileCDR

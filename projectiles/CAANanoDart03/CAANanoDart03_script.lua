@@ -7,6 +7,7 @@ CAANanoDartProjectile = import('/lua/cybranprojectiles.lua').CAANanoDartProjecti
 -- globals as upvalues for performance 
 local Random = Random
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateEmitterOnEntity = CreateEmitterOnEntity
 
@@ -27,8 +28,10 @@ local UpdateThread = function(self)
     ProjectileSetMaxSpeed(self, 10)
     ProjectileSetBallisticAcceleration(self, -0.2)
 
-    for i in self.FxTrails do
-        CreateEmitterOnEntity(self, self.Army, self.FxTrails[i])
+    local army = self.Army
+    local fxTrails = self.FxTrails
+    for i in fxTrails do
+        CreateEmitterOnEntity(self, army, fxTrails[i])
     end
 
     WaitSeconds(0.25)
@@ -44,7 +47,7 @@ CAANanoDart01 = Class(CAANanoDartProjectile) {
 
    OnCreate = function(self)
         CAANanoDartProjectile.OnCreate(self)
-        ForkThread(UpdateThread, self)
+        TrashAdd(self.Trash, ForkThread(UpdateThread, self))
    end,
 
 

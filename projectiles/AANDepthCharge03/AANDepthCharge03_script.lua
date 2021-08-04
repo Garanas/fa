@@ -6,6 +6,7 @@ local VizMarker = import('/lua/sim/VizMarker.lua').VizMarker
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateEmitterAtEntity = CreateEmitterAtEntity
 
@@ -35,7 +36,7 @@ AANDepthCharge03 = Class(ADepthChargeProjectile) {
     OnCreate = function(self)
         ADepthChargeProjectile.OnCreate(self)
         self.HasImpacted = false
-        ForkThread(self.CountdownExplosion, self)
+        TrashAdd(self.Trash, ForkThread(self.CountdownExplosion, self))
     end,
 
     CountdownExplosion = function(self)
@@ -68,7 +69,7 @@ AANDepthCharge03 = Class(ADepthChargeProjectile) {
     OnLostTarget = function(self)
         ProjectileSetMaxSpeed(self, 2)
         ProjectileSetAcceleration(self, -0.6)
-        ForkThread(self.CountdownMovement, self)
+        TrashAdd(self.Trash, ForkThread(self.CountdownMovement, self))
     end,
 
     CountdownMovement = function(self)

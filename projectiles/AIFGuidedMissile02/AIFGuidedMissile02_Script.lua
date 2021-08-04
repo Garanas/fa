@@ -15,6 +15,7 @@ local DefaultExplosion = import('/lua/defaultexplosions.lua')
 -- globals as upvalues for performance 
 local DamageArea = DamageArea
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateDecal = CreateDecal
 
@@ -32,7 +33,7 @@ AIFGuidedMissile02 = Class(AGuidedMissileProjectile) {
 
     OnCreate = function(self)
 		AGuidedMissileProjectile.OnCreate(self)
-		ForkThread(self.MovementThread , self)
+		TrashAdd(self.Trash, ForkThread(self.MovementThread , self))
     end,
     
 	MovementThread = function(self)

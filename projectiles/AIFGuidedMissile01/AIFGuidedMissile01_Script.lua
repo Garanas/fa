@@ -13,6 +13,7 @@ local EffectTemplate = import('/lua/EffectTemplates.lua')
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 
 -- math functions as upvalues for performance
@@ -38,7 +39,7 @@ AIFGuidedMissile = Class(AGuidedMissileProjectile) {
         if launcher and not launcher:IsDead() then
             launcher:ProjectileFired()
         end		
-		ForkThread( self.SplitThread , self)
+		TrashAdd(self.Trash, ForkThread( self.SplitThread , self))
     end,
 
     SplitThread = function(self)

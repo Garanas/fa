@@ -5,6 +5,7 @@ local Projectile = import('/lua/sim/Projectile.lua').Projectile
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateEmitterOnEntity = CreateEmitterOnEntity
 
@@ -125,7 +126,7 @@ MissileCruiseTerran01 = Class(Projectile) {
         self.MissileExhaust = CreateBeamEmitter('/effects/emitters/missile_cruise_munition_exhaust_beam_01_emit.bp', army)
         AttachBeamToEntity(self.MissileExhaust, self, -1, army)
 
-        ForkThread(CruiseMissileThread, self)
+        TrashAdd(self.Trash, ForkThread(CruiseMissileThread, self))
     end,
 
     OnImpact = function(self, TargetType, TargetEntity)

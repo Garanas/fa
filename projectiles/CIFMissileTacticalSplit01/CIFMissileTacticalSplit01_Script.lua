@@ -6,6 +6,7 @@ local CLOATacticalChildMissileProjectile = import('/lua/cybranprojectiles.lua').
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 
 local ProjectileMethods = _G.moho.projectile_methods
@@ -44,7 +45,7 @@ CIFMissileTacticalSplit01 = Class(CLOATacticalChildMissileProjectile) {
         ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 2.5)
         self:SetDamage(25)
         self.invincible = true
-        ForkThread(DelayForDestruction, self)
+        TrashAdd(self.Trash, ForkThread(DelayForDestruction, self))
     end,
 
     OnDamage = function(self, instigator, amount, vector, damageType)

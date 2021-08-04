@@ -10,6 +10,7 @@ local Explosion = import('/lua/defaultexplosions.lua')
 local VDist2Sq = VDist2Sq
 local DamageArea = DamageArea
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateDecal = CreateDecal
 
@@ -82,7 +83,7 @@ TIFMissileCruise04 = Class(TMissileCruiseProjectile) {
         TMissileCruiseProjectile.OnCreate(self)
         ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 2.0)
         self.MovementTurnLevel = 1
-        ForkThread( MovementThread , self)
+        TrashAdd(self.Trash, ForkThread( MovementThread , self))
     end,
     
     OnImpact = function(self, targetType, targetEntity)

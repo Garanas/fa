@@ -5,6 +5,7 @@ local AMissileSerpentine02Projectile = import('/lua/aeonprojectiles.lua').AMissi
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 
 -- moho functions as upvalue for performance
@@ -25,7 +26,7 @@ AIFMissileTactical02 = Class(AMissileSerpentine02Projectile) {
     OnCreate = function(self)
         AMissileSerpentine02Projectile.OnCreate(self)
         ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 2.0)
-        ForkThread( self.MovementThread , self)
+        TrashAdd(self.Trash, ForkThread( self.MovementThread , self))
     end,
 
     MovementThread = function(self)        

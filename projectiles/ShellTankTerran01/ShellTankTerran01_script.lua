@@ -6,6 +6,7 @@ local Projectile = import('/lua/sim/Projectile.lua').Projectile
 -- globals as upvalues for performance 
 local Random = Random
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitTicks = WaitTicks
 local CreateSplat = CreateSplat
 local CreateEmitterAtEntity = CreateEmitterAtEntity
@@ -68,7 +69,7 @@ ShellTankTerran01 = Class(Projectile) {
 
     OnCreate = function(self)
         Projectile.OnCreate(self)
-        ForkThread(Thread, self)
+        TrashAdd(self.Trash, ForkThread(Thread, self))
     end,
 }
 

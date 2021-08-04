@@ -4,6 +4,7 @@
 
 -- globals as upvalues for performance 
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 
 -- moho functions as upvalue for performance
@@ -23,7 +24,7 @@ CIMAntiTorpedo02 = Class(CDepthChargeProjectile) {
 	OnCreate = function(self, inWater)
         CDepthChargeProjectile.OnCreate(self, inWater)
         ProjectileSetBallisticAcceleration(self, 0)
-        ForkThread( MotionThread , self) 
+        TrashAdd(self.Trash, ForkThread( MotionThread , self)) 
     end,
 
 

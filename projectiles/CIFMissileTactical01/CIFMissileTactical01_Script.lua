@@ -11,6 +11,7 @@ local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
 local VDist2Sq = VDist2Sq
 local DamageArea = DamageArea
 local ForkThread = ForkThread
+local TrashAdd = TrashBag.Add
 local WaitSeconds = WaitSeconds
 local CreateDecal = CreateDecal
 local CreateLightParticle = CreateLightParticle
@@ -62,7 +63,6 @@ local SetTurnRateByDist = function(self, previousDistance)
         ProjectileSetTurnRate(self, 50)
     elseif dist > 0 and dist <= 100 then
         ProjectileSetTurnRate(self, 100)
-        KillThread(self.MoveThread)
     end
 end
 
@@ -85,7 +85,7 @@ CIFMissileTactical01 = Class(CLOATacticalMissileProjectile) {
         CLOATacticalMissileProjectile.OnCreate(self)
         ProjectileSetCollisionShape(self, 'Sphere', 0, 0, 0, 2)
         self.Split = false
-        self.MoveThread = ForkThread(MovementThread, self)
+        TrashAdd(self.Trash, ForkThread(MovementThread, self))
     end,
     
     PassDamageData = function(self, damageData)
