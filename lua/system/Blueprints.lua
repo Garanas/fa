@@ -490,7 +490,7 @@ function PreModBlueprints(all_bps)
         for i, w in bp.Weapon or {} do
 
             -- used for caching weapon priorities on a per-unit and per-weapon basis
-            w.BlueprintId = tostring(k) .. " - " .. tostring(i)
+            w.BlueprintId = tostring(k) .. "-" .. tostring(i)
 
             if w.TargetPriorities then
 

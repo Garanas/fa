@@ -50,10 +50,10 @@ function Hash01()
 
     local sum = 0
     for k = 1, 100000 do 
-        sum = sum + element.x
-        sum = sum + element.y
-        sum = sum + element.z
-        sum = sum + element.w
+        sum = sum + element.x -- GETABLE, ADD
+        sum = sum + element.y -- GETABLE, ADD
+        sum = sum + element.z -- GETABLE, ADD
+        sum = sum + element.w -- GETABLE, ADD
     end
 
     local final = GetSystemTimeSecondsOnlyForProfileUse()
@@ -307,10 +307,10 @@ function HashCached02()
     local sum = 0
     for k = 1, 100000 do 
 
-        local x = element.x 
-        local y = element.y 
-        local z = element.z
-        local w = element.w
+        local x = element.x -- GETTABLE
+        local y = element.y -- GETTABLE
+        local z = element.z -- GETTABLE
+        local w = element.w -- GETTABLE
 
         sum = sum + x
         sum = sum + y

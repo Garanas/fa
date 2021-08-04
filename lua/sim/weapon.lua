@@ -13,9 +13,13 @@ local NukeDamage = import('/lua/sim/NukeDamage.lua').NukeAOE
 local Set = import('/lua/system/setutils.lua')
 
 local ParseEntityCategoryProperly = import('/lua/sim/CategoryUtils.lua').ParseEntityCategoryProperly
-local CacheAllDefaultPriorities = false
-local CacheAllWeaponPriorities = { } 
 
+-- Contains all possible priorities found inside (weapon) blueprint files. It is
+-- cached once and allows for quick string -> category conversion.
+local CacheAllDefaultPriorities = false
+
+-- Finds unique priorities of all weapons of all units and pre-parses those. This 
+-- function populates the 'CacheAllDefaultPriorities' defined above.
 local function ParsePriorities()
     local idlist = EntityCategoryGetUnitList(categories.ALLUNITS)
     local finalPriorities = {}
@@ -36,10 +40,13 @@ local function ParsePriorities()
         end
     end
 
-    LOG(repr(finalPriorities))
-
     return finalPriorities
 end
+
+-- Contains all default weapon priorities that are defined in blueprint files. It is
+-- cached when a weapon is made for the first time. The ID is defined in Blueprints.lua and
+-- is essentially <unitblueprintid-weaponnumber>. As an example for the Zthuee: xsl0103-1.
+local CacheAllWeaponPriorities = { } 
 
 Weapon = Class(moho.weapon_methods) {
     __init = function(self, unit)
@@ -49,8 +56,8 @@ Weapon = Class(moho.weapon_methods) {
     OnCreate = function(self)
 
         -- cache blueprint
-        self.Blueprint = self:GetBlueprint()
-        LOG(repr(self.Blueprint))
+        local blueprint = self:GetBlueprint()
+        self.Blueprint = blueprint
 
         -- share trashbag with unit
         local unit = self.unit
@@ -62,32 +69,40 @@ Weapon = Class(moho.weapon_methods) {
 
         self.Trash = trash 
 
+        -- initialize valid targets (atlantis that is underwater can't use sams, for example)
+        local layer = unit:GetCurrentLayer()
+        self:SetValidTargetsForCurrentLayer(layer)
 
-        self:SetValidTargetsForCurrentLayer(unit:GetCurrentLayer())
-        local bp = self.Blueprint
-        if bp.Turreted == true then
+        -- initialize turret if we are one
+        if blueprint.Turreted then
             self:SetupTurret()
         end
+
+        -- set the default weapon priorities
         self:SetWeaponPriorities()
-        self.DisabledBuffs = {}
+
+        -- initialize some state
+        self.CollideFriendly = blueprint.CollideFriendly == true
+        self.DisabledBuffs = { }
         self.DamageMod = 0
         self.DamageRadiusMod = 0
         self.NumTargets = 0
 
-        local initStore = bp.InitialProjectileStorage
+        -- check if we should start loaded
+        local initStore = blueprint.InitialProjectileStorage
         if initStore and initStore > 0 then
-            local maxProjectileStorage = bp.MaxProjectileStorage
+            local maxProjectileStorage = blueprint.MaxProjectileStorage
             if maxProjectileStorage and maxProjectileStorage < initStore then
                 initStore = maxProjectileStorage
             end
             local nuke = false
-            if bp.NukeWeapon then
+            if blueprint.NukeWeapon then
                 nuke = true
             end
-            self:ForkThread(self.AmmoThread, nuke, initStore)
-        end
 
-        self.CollideFriendly = bp.CollideFriendly == true
+            -- add the ammo the next tick to prevent errors
+            TrashAdd(self.Trash, ForkThread(self.AmmoThread, self, nuke, initStore))
+        end
     end,
 
     AmmoThread = function(self, nuke, amount)
@@ -100,56 +115,63 @@ Weapon = Class(moho.weapon_methods) {
     end,
 
     SetupTurret = function(self)
-        local bp = self.Blueprint
-        local yawBone = bp.TurretBoneYaw
-        local pitchBone = bp.TurretBonePitch
-        local muzzleBone = bp.TurretBoneMuzzle
-        local precedence = bp.AimControlPrecedence or 10
-        local pitchBone2
-        local muzzleBone2
-        if bp.TurretBoneDualPitch and bp.TurretBoneDualPitch ~= '' then
-            pitchBone2 = bp.TurretBoneDualPitch
-        end
-        if bp.TurretBoneDualMuzzle and bp.TurretBoneDualMuzzle ~= '' then
-            muzzleBone2 = bp.TurretBoneDualMuzzle
-        end
-        if not (self.unit:ValidateBone(yawBone) and self.unit:ValidateBone(pitchBone) and self.unit:ValidateBone(muzzleBone)) then
+        -- cache for performance
+        local unit = self.unit
+        local blueprint = self.Blueprint
+
+        -- get turret bones
+        local yawBone = blueprint.TurretBoneYaw
+        local pitchBone = blueprint.TurretBonePitch
+        local muzzleBone = blueprint.TurretBoneMuzzle
+        local precedence = blueprint.AimControlPrecedence or 10
+
+        -- these are optional, they default to nil
+        local pitchBone2 = blueprint.TurretBoneDualPitch
+        local muzzleBone2 = blueprint.TurretBoneDualMuzzle
+
+        -- check to make sure they're valid
+        if not (unit.IsValidBone(unit, yawBone) and unit.IsValidBone(unit, pitchBone) and unit.IsValidBone(unit, muzzleBone)) then
             error('*ERROR: Bone aborting turret setup due to bone issues.', 2)
             return
-        elseif pitchBone2 and muzzleBone2 then
-            if not (self.unit:ValidateBone(pitchBone2) and self.unit:ValidateBone(muzzleBone2)) then
+        end
+
+        -- check if these are valid, assuming they exist
+        if pitchBone2 and muzzleBone2 then
+            if not (unit.IsValidBone(unit, pitchBone2) and unit.IsValidBone(unit, muzzleBone2)) then
                 error('*ERROR: Bone aborting turret setup due to pitch/muzzle bone2 issues.', 2)
                 return
             end
         end
+
+
         if yawBone and pitchBone and muzzleBone then
-            if bp.TurretDualManipulators then
+            if blueprint.TurretDualManipulators then
                 self.AimControl = CreateAimController(self, 'Torso', yawBone)
                 self.AimRight = CreateAimController(self, 'Right', pitchBone, pitchBone, muzzleBone)
                 self.AimLeft = CreateAimController(self, 'Left', pitchBone2, pitchBone2, muzzleBone2)
                 self.AimControl:SetPrecedence(precedence)
                 self.AimRight:SetPrecedence(precedence)
                 self.AimLeft:SetPrecedence(precedence)
-                if EntityCategoryContains(categories.STRUCTURE, self.unit) then
+                if EntityCategoryContains(categories.STRUCTURE, unit) then
                     self.AimControl:SetResetPoseTime(9999999)
                 end
                 self:SetFireControl('Right')
-                self.unit.Trash:Add(self.AimControl)
-                self.unit.Trash:Add(self.AimRight)
-                self.unit.Trash:Add(self.AimLeft)
+                self.Trash:Add(self.AimControl)
+                self.Trash:Add(self.AimRight)
+                self.Trash:Add(self.AimLeft)
             else
                 self.AimControl = CreateAimController(self, 'Default', yawBone, pitchBone, muzzleBone)
                 if EntityCategoryContains(categories.STRUCTURE, self.unit) then
                     self.AimControl:SetResetPoseTime(9999999)
                 end
-                self.unit.Trash:Add(self.AimControl)
+                self.Trash:Add(self.AimControl)
                 self.AimControl:SetPrecedence(precedence)
-                if bp.RackSlavedToTurret and not table.empty(bp.RackBones) then
-                    for k, v in bp.RackBones do
+                if blueprint.RackSlavedToTurret and not table.empty(blueprint.RackBones) then
+                    for k, v in blueprint.RackBones do
                         if v.RackBone ~= pitchBone then
                             local slaver = CreateSlaver(self.unit, v.RackBone, pitchBone)
                             slaver:SetPrecedence(precedence-1)
-                            self.unit.Trash:Add(slaver)
+                            self.Trash:Add(slaver)
                         end
                     end
                 end
@@ -164,22 +186,22 @@ Weapon = Class(moho.weapon_methods) {
         local turretpitchmin, turretpitchmax, turretpitchspeed
 
         -- SETUP MANIPULATORS AND SET TURRET YAW, PITCH AND SPEED
-        if bp.TurretYaw and bp.TurretYawRange then
+        if blueprint.TurretYaw and blueprint.TurretYawRange then
             turretyawmin, turretyawmax = self:GetTurretYawMinMax()
         else
             numbersexist = false
         end
-        if bp.TurretYawSpeed then
+        if blueprint.TurretYawSpeed then
             turretyawspeed = self:GetTurretYawSpeed()
         else
             numbersexist = false
         end
-        if bp.TurretPitch and bp.TurretPitchRange then
+        if blueprint.TurretPitch and blueprint.TurretPitchRange then
             turretpitchmin, turretpitchmax = self:GetTurretPitchMinMax()
         else
             numbersexist = false
         end
-        if bp.TurretPitchSpeed then
+        if blueprint.TurretPitchSpeed then
             turretpitchspeed = self:GetTurretPitchSpeed()
         else
             numbersexist = false
@@ -193,7 +215,7 @@ Weapon = Class(moho.weapon_methods) {
                 self.AimLeft:SetFiringArc(turretyawmin/12, turretyawmax/12, turretyawspeed, turretpitchmin, turretpitchmax, turretpitchspeed)
             end
         else
-            local strg = '*ERROR: TRYING TO SETUP A TURRET WITHOUT ALL TURRET NUMBERS IN BLUEPRINT, ABORTING TURRET SETUP. WEAPON: ' .. bp.Label .. ' UNIT: '.. self.unit.UnitId
+            local strg = '*ERROR: TRYING TO SETUP A TURRET WITHOUT ALL TURRET NUMBERS IN BLUEPRINT, ABORTING TURRET SETUP. WEAPON: ' .. blueprint.Label .. ' UNIT: '.. self.unit.UnitId
             error(strg, 2)
         end
     end,
@@ -415,18 +437,18 @@ Weapon = Class(moho.weapon_methods) {
             -- find our weapon id and see if we did this weapon before
             local blueprint = self.Blueprint 
             local weaponId = blueprint.BlueprintId
-            LOG(weaponId)
             local priorities = CacheAllWeaponPriorities[weaponId]
 
             -- if we have not do this weapon before then do it and cache it
             if not priorities then 
-                local bp = blueprint.TargetPriorities
-                if bp then
+                local targetPriorities = blueprint.TargetPriorities
+                -- not all weapons have target priorities defined
+                if targetPriorities then
                     local prioritiesCount = 0
                     priorities = { }
 
                     -- for each category
-                    for k, v in bp do
+                    for k, v in targetPriorities do
 
                         -- if we have this category cached then add it
                         if CacheAllDefaultPriorities[v] then
@@ -450,13 +472,14 @@ Weapon = Class(moho.weapon_methods) {
                     end
 
                     -- store the resulting table
-                    LOG(repr(priorities))
                     CacheAllWeaponPriorities[weaponId] = priorities
                 end
             end
 
             -- set the default weapon priorities
-            self:SetTargetingPriorities(priorities)
+            if priorities then 
+                self:SetTargetingPriorities(priorities)
+            end
         else
             if type(priTable[1]) == 'string' then
                 LOG("String pri table")

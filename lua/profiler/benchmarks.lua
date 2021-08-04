@@ -20,15 +20,13 @@ function RunToSync()
     -- import them
     for k, file in files do 
 
-        coroutine.yield(10)
+        coroutine.yield(20)
 
         results[file] = { }
 
         -- load in the benchmark and run them
         local benchmark = import(file)
         for e, element in benchmark do 
-
-
 
             if not table.find(FunctionsToExclude, e) then 
                 if type(element) == "function" then 
@@ -43,6 +41,8 @@ function RunToSync()
             end
         end
     end
+
+    LOG("Done running benchmarks")
 
     -- send it to the ui
     Sync.Profiler = Sync.Profiler or { }

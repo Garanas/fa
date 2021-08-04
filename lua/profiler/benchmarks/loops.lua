@@ -88,23 +88,23 @@ end
 -- hardware: AMD Ryzen 3600 6-core
 -- time: 8.1476287841797 
 
-function WhileGetn()
+-- function WhileGetn()
 
-    local start = GetSystemTimeSecondsOnlyForProfileUse()
+--     local start = GetSystemTimeSecondsOnlyForProfileUse()
 
-    for k = 1, 100000 do 
-        local k = 1
-        local x = 0
-        while k < table.getn(data) do 
-            x = x + data[k]
-            k = k + 1
-        end
-    end
+--     for k = 1, 100000 do 
+--         local k = 1
+--         local x = 0
+--         while k < table.getn(data) do 
+--             x = x + data[k]
+--             k = k + 1
+--         end
+--     end
 
-    local final = GetSystemTimeSecondsOnlyForProfileUse()
+--     local final = GetSystemTimeSecondsOnlyForProfileUse()
 
-    return final - start
-end
+--     return final - start
+-- end
 
 -- ran by: (Jip) Willem Wijnia
 -- hardware: AMD Ryzen 3600 6-core

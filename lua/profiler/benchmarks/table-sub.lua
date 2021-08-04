@@ -1,4 +1,5 @@
 
+-- 0.001663
 function BlueprintSubTables2()
 
     -- create a dummy unit
@@ -18,6 +19,7 @@ function BlueprintSubTables2()
     return final - start
 end
 
+-- 0.001113
 function BlueprintSubTables1()
 
     -- create a dummy unit

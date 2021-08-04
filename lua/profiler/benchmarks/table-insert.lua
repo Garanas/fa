@@ -1,7 +1,7 @@
 
 -- ran by: (Jip) Willem Wijnia
 -- hardware: AMD Ryzen 3600 6-core
--- time: 0.021240234375
+-- time: 0.046
 
 function AddInsertGlobal()
 
