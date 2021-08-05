@@ -12,20 +12,28 @@ local DefaultProjectileWeapon = import('/lua/sim/defaultweapons.lua').DefaultPro
 local EffectTemplate = import('/lua/EffectTemplates.lua')
 local EffectUtils = import('/lua/effectutilities.lua')
 
+-- upvalued moho functions for performance
+local EntityMethods = _G.moho.entity_methods
+local EntityKill = EntityMethods.Kill
+local EntityDestroy = EntityMethods.Destroy
+
+local UnitMethods = _G.moho.unit_methods
+local UnitGetWeapon = UnitMethods.GetWeapon
+
 DAA0206 = Class(AAirUnit) {
     Weapons = {
         Suicide = Class(DefaultProjectileWeapon) {}
     },
 
     OnRunOutOfFuel = function(self)
-        self.Kill(self)
+        EntityKill(self)
     end,
-    
+
     ProjectileFired = function(self)
-        self.GetWeapon(self, 1).IdleState.Main = function(self) end
+        UnitGetWeapon(self, 1).IdleState.Main = function(self) end
         self.PlayUnitSound(self, 'Killed')
 		self.PlayUnitSound(self, 'Destroyed')
-        self.Destroy(self)
+        EntityDestroy(self)
     end,
 }
 TypeClass = DAA0206
