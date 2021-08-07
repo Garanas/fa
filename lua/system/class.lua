@@ -233,6 +233,11 @@ function ClassMeta:__call(...)
             error 'Something other than a Class or State was used for a base class'
         end
     end
+
+    -- LOG("making class")
+    -- local here = debug.getinfo(2).source
+    -- LOG(repr(here))
+
     local temp = { unpack(arg) }
     setmetatable(temp, IntermediateClassMeta)
     return temp

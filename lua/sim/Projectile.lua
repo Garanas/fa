@@ -56,14 +56,88 @@ local OnImpactDestroyCategories = categories.ANTIMISSILE * categories.ALLPROJECT
 
 local DefaultTerrainTypeFxImpact = GetTerrainType(-1, -1).FxImpact
 
+-- create the tracker table for units
+local identifier = "Projectile"
+local simModel = import("/mods/profiler/modules/sim/model.lua")
+local tracker = simModel.Hooks[identifier] or { }
+tracker.MohoFunctions = tracker.MohoFunctions or { }
+tracker.Functions = tracker.Functions or { }
+simModel.Hooks[identifier] = tracker
+
+local ProfilerFunctions = {
+    "ChangeDetonateBelowHeight",
+    "ChangeMaxZigZag",
+    "ChangeZigZagFrequency",
+    "CreateChildProjectile",
+    "GetCurrentSpeed",
+    "GetCurrentTargetPosition",
+    "GetLauncher",
+    "GetTrackingTarget",
+    "GetVelocity",
+    "SetAcceleration",
+    "SetBallisticAcceleration",
+    "SetCollideEntity",
+    "SetCollideSurface",
+    "SetCollision",
+    "SetDamage",
+    "SetDestroyOnWater",
+    "SetLifetime",
+    "SetLocalAngularVelocity",
+    "SetMaxSpeed",
+    "SetNewTarget",
+    "SetNewTargetGround",
+    "SetScaleVelocity",
+    "SetStayUpright",
+    "SetTurnRate",
+    "SetVelocity",
+    "SetVelocityAlign",
+    "SetVelocityRandomUpVector",
+    "StayUnderwater",
+    "TrackTarget",
+}
+
+for k, func in ProfilerFunctions do 
+    local element = ProjectileMethods[func]
+    if type(element) == "cfunction" then 
+
+        local lK = func 
+
+        -- hook the function for profiling
+        local old = ProjectileMethods[lK]
+        ProjectileMethods[lK] = function(...)
+            tracker.MohoFunctions[lK] = tracker.MohoFunctions[lK] or 0
+            tracker.MohoFunctions[lK] = tracker.MohoFunctions[lK] + 1
+
+            -- call the old function
+            return old(unpack(arg))
+        end
+    end
+end
+
 Projectile = Class(ProjectileMethods, Entity) {
 
     -- Do not call the base class __init and __post_init, we already have a c++ object
-    __init = function(self, spec)
+        __init = function(self, spec)
+
+        -- PROFILER START
+        if not tracker.Functions["__init"] then 
+            tracker.Functions["__init"]  = 0 
+        end
+        tracker.Functions["__init"] = tracker.Functions["__init"] + 1
+        -- PROFILER END
+
     end,
 
     -- Do not call the base class __init and __post_init, we already have a c++ object
-    __post_init = function(self, spec)
+        __post_init = function(self, spec)
+
+        -- PROFILER START
+        if not tracker.Functions["__post_init"] then 
+            tracker.Functions["__post_init"]  = 0 
+        end
+        tracker.Functions["__post_init"] = tracker.Functions["__post_init"] + 1
+        -- PROFILER END
+
     end,
 
     DestroyOnImpact = true,
@@ -100,6 +174,14 @@ Projectile = Class(ProjectileMethods, Entity) {
     -- performance-wise this function just hurts and is not needed
     ForkThread = function(self, fn, ...)
 
+        -- PROFILER START
+        if not tracker.Functions["ForkThread"] then 
+            tracker.Functions["ForkThread"]  = 0 
+        end
+        tracker.Functions["ForkThread"] = tracker.Functions["ForkThread"] + 1
+        -- PROFILER END
+
+
         LOG("Projectile forkthread called at: " .. repr(debug.getinfo(2)))
 
         if fn then
@@ -112,7 +194,15 @@ Projectile = Class(ProjectileMethods, Entity) {
     end,
 
     -- called by engine when made
-    OnCreate = function(self, inWater)
+        OnCreate = function(self, inWater)
+
+        -- PROFILER START
+        if not tracker.Functions["OnCreate"] then 
+            tracker.Functions["OnCreate"]  = 0 
+        end
+        tracker.Functions["OnCreate"] = tracker.Functions["OnCreate"] + 1
+        -- PROFILER END
+
 
         -- get blueprint into local scope for performance
         local blueprint = EntityGetBlueprint(self)
@@ -149,7 +239,15 @@ Projectile = Class(ProjectileMethods, Entity) {
 
     -- receive damage data as deep-copy
     -- PERFORMANCE-TODO: Does this need to be a deep-copy?
-    PassDamageData = function(self, DamageData)
+        PassDamageData = function(self, DamageData)
+
+        -- PROFILER START
+        if not tracker.Functions["PassDamageData"] then 
+            tracker.Functions["PassDamageData"]  = 0 
+        end
+        tracker.Functions["PassDamageData"] = tracker.Functions["PassDamageData"] + 1
+        -- PROFILER END
+
         -- only copy data that is present
         local SelfDamageData = self.DamageData
         for k, value in DamageData do 
@@ -173,7 +271,15 @@ Projectile = Class(ProjectileMethods, Entity) {
         self.CollideFriendly = SelfDamageData.CollideFriendly
     end,
 
-    DoDamage = function(self, instigator, DamageData, targetEntity)
+        DoDamage = function(self, instigator, DamageData, targetEntity)
+
+        -- PROFILER START
+        if not tracker.Functions["DoDamage"] then 
+            tracker.Functions["DoDamage"]  = 0 
+        end
+        tracker.Functions["DoDamage"] = tracker.Functions["DoDamage"] + 1
+        -- PROFILER END
+
         local damage = DamageData.DamageAmount
         if damage and damage > 0 then
             local position = EntityGetPosition(self)
@@ -220,7 +326,15 @@ Projectile = Class(ProjectileMethods, Entity) {
         end
     end,
 
-    OnCollisionCheck = function(self, other)
+        OnCollisionCheck = function(self, other)
+
+        -- PROFILER START
+        if not tracker.Functions["OnCollisionCheck"] then 
+            tracker.Functions["OnCollisionCheck"]  = 0 
+        end
+        tracker.Functions["OnCollisionCheck"] = tracker.Functions["OnCollisionCheck"] + 1
+        -- PROFILER END
+
 
         -- if we return false the thing hitting us has no idea that it came into contact with us
         if self.Army == other.Army then return false end
@@ -251,7 +365,15 @@ Projectile = Class(ProjectileMethods, Entity) {
     end,
 
     -- called when a projectile receives damage
-    OnDamage = function(self, instigator, amount, vector, damageType)
+        OnDamage = function(self, instigator, amount, vector, damageType)
+
+        -- PROFILER START
+        if not tracker.Functions["OnDamage"] then 
+            tracker.Functions["OnDamage"]  = 0 
+        end
+        tracker.Functions["OnDamage"] = tracker.Functions["OnDamage"] + 1
+        -- PROFILER END
+
         if self.BlueprintDefenseMaxHealth then
             self:DoTakeDamage(instigator, amount, vector, damageType)
         else
@@ -260,12 +382,28 @@ Projectile = Class(ProjectileMethods, Entity) {
     end,
 
     -- called when a projectile should be de-allocated
-    OnDestroy = function(self)
+        OnDestroy = function(self)
+
+        -- PROFILER START
+        if not tracker.Functions["OnDestroy"] then 
+            tracker.Functions["OnDestroy"]  = 0 
+        end
+        tracker.Functions["OnDestroy"] = tracker.Functions["OnDestroy"] + 1
+        -- PROFILER END
+
         TrashBagDestroy(self.Trash)
     end,
 
     -- called when a projectile takes damage
-    DoTakeDamage = function(self, instigator, amount, vector, damageType)
+        DoTakeDamage = function(self, instigator, amount, vector, damageType)
+
+        -- PROFILER START
+        if not tracker.Functions["DoTakeDamage"] then 
+            tracker.Functions["DoTakeDamage"]  = 0 
+        end
+        tracker.Functions["DoTakeDamage"] = tracker.Functions["DoTakeDamage"] + 1
+        -- PROFILER END
+
         -- Check for valid projectile
         if not self or self:BeenDestroyed() then
             return
@@ -290,12 +428,28 @@ Projectile = Class(ProjectileMethods, Entity) {
         end
     end,
 
-    OnKilled = function(self, instigator, type, overkillRatio)
+        OnKilled = function(self, instigator, type, overkillRatio)
+
+        -- PROFILER START
+        if not tracker.Functions["OnKilled"] then 
+            tracker.Functions["OnKilled"]  = 0 
+        end
+        tracker.Functions["OnKilled"] = tracker.Functions["OnKilled"] + 1
+        -- PROFILER END
+
         self.CreateImpactEffects(self, self.Army, self.FxOnKilled, self.FxOnKilledScale)
         EntityDestroy(self)
     end,
 
-    DoMetaImpact = function(self, damageData)
+        DoMetaImpact = function(self, damageData)
+
+        -- PROFILER START
+        if not tracker.Functions["DoMetaImpact"] then 
+            tracker.Functions["DoMetaImpact"]  = 0 
+        end
+        tracker.Functions["DoMetaImpact"] = tracker.Functions["DoMetaImpact"] + 1
+        -- PROFILER END
+
         if damageData.MetaImpactRadius and damageData.MetaImpactAmount then
             local x, y, z = EntityGetPositionXYZ(self)
             y = GetSurfaceHeight(x, z)
@@ -303,7 +457,15 @@ Projectile = Class(ProjectileMethods, Entity) {
         end
     end,
 
-    CreateImpactEffects = function(self, army, EffectTable, EffectScale)
+        CreateImpactEffects = function(self, army, EffectTable, EffectScale)
+
+        -- PROFILER START
+        if not tracker.Functions["CreateImpactEffects"] then 
+            tracker.Functions["CreateImpactEffects"]  = 0 
+        end
+        tracker.Functions["CreateImpactEffects"] = tracker.Functions["CreateImpactEffects"] + 1
+        -- PROFILER END
+
         -- default values
         EffectScale = EffectScale or 1
 
@@ -327,7 +489,15 @@ Projectile = Class(ProjectileMethods, Entity) {
         end
     end,
 
-    CreateTerrainEffects = function(self, army, EffectTable, EffectScale)
+        CreateTerrainEffects = function(self, army, EffectTable, EffectScale)
+
+        -- PROFILER START
+        if not tracker.Functions["CreateTerrainEffects"] then 
+            tracker.Functions["CreateTerrainEffects"]  = 0 
+        end
+        tracker.Functions["CreateTerrainEffects"] = tracker.Functions["CreateTerrainEffects"] + 1
+        -- PROFILER END
+
         -- default values
         EffectScale = EffectScale or 1
 
@@ -337,7 +507,15 @@ Projectile = Class(ProjectileMethods, Entity) {
         end
     end,
 
-    GetTerrainEffects = function(self, TargetType, ImpactEffectType)
+        GetTerrainEffects = function(self, TargetType, ImpactEffectType)
+
+        -- PROFILER START
+        if not tracker.Functions["GetTerrainEffects"] then 
+            tracker.Functions["GetTerrainEffects"]  = 0 
+        end
+        tracker.Functions["GetTerrainEffects"] = tracker.Functions["GetTerrainEffects"] + 1
+        -- PROFILER END
+
         -- default value
         ImpactEffectType = ImpactEffectType or 'Default'
 
@@ -350,7 +528,15 @@ Projectile = Class(ProjectileMethods, Entity) {
         return TerrainEffect
     end,
 
-    OnCollisionCheckWeapon = function(self, firingWeapon)
+        OnCollisionCheckWeapon = function(self, firingWeapon)
+
+        -- PROFILER START
+        if not tracker.Functions["OnCollisionCheckWeapon"] then 
+            tracker.Functions["OnCollisionCheckWeapon"]  = 0 
+        end
+        tracker.Functions["OnCollisionCheckWeapon"] = tracker.Functions["OnCollisionCheckWeapon"] + 1
+        -- PROFILER END
+
         if not firingWeapon.CollideFriendly and self.Army == firingWeapon.unit.Army then
             return false
         end
@@ -368,7 +554,15 @@ Projectile = Class(ProjectileMethods, Entity) {
     end,
 
     -- Create some cool explosions when we get destroyed
-    OnImpact = function(self, targetType, targetEntity)
+        OnImpact = function(self, targetType, targetEntity)
+
+        -- PROFILER START
+        if not tracker.Functions["OnImpact"] then 
+            tracker.Functions["OnImpact"]  = 0 
+        end
+        tracker.Functions["OnImpact"] = tracker.Functions["OnImpact"] + 1
+        -- PROFILER END
+
         
         -- Try to use the launcher as instigator first. If its been deleted, use ourselves (this
         -- projectile is still associated with an army)
@@ -463,7 +657,15 @@ Projectile = Class(ProjectileMethods, Entity) {
         end
     end,
 
-    OnImpactDestroy = function(self, targetType, targetEntity)
+        OnImpactDestroy = function(self, targetType, targetEntity)
+
+        -- PROFILER START
+        if not tracker.Functions["OnImpactDestroy"] then 
+            tracker.Functions["OnImpactDestroy"]  = 0 
+        end
+        tracker.Functions["OnImpactDestroy"] = tracker.Functions["OnImpactDestroy"] + 1
+        -- PROFILER END
+
         local destroyOnImpact = self.DestroyOnImpact
         if destroyOnImpact or not targetEntity or
             (not destroyOnImpact and targetEntity and not EntityCategoryContains(OnImpactDestroyCategories, targetEntity)) then
@@ -471,13 +673,29 @@ Projectile = Class(ProjectileMethods, Entity) {
         end
     end,
 
-    ImpactTimeoutThread = function(self, seconds)
+        ImpactTimeoutThread = function(self, seconds)
+
+        -- PROFILER START
+        if not tracker.Functions["ImpactTimeoutThread"] then 
+            tracker.Functions["ImpactTimeoutThread"]  = 0 
+        end
+        tracker.Functions["ImpactTimeoutThread"] = tracker.Functions["ImpactTimeoutThread"] + 1
+        -- PROFILER END
+
         WaitSeconds(seconds)
         EntityDestroy(self)
     end,
 
     -- When this projectile impacts with the target, do any buffs that have been passed to it.
-    DoUnitImpactBuffs = function(self, target)
+        DoUnitImpactBuffs = function(self, target)
+
+        -- PROFILER START
+        if not tracker.Functions["DoUnitImpactBuffs"] then 
+            tracker.Functions["DoUnitImpactBuffs"]  = 0 
+        end
+        tracker.Functions["DoUnitImpactBuffs"] = tracker.Functions["DoUnitImpactBuffs"] + 1
+        -- PROFILER END
+
         local data = self.DamageData
         -- Check for buff
         if data.Buffs then
@@ -505,22 +723,54 @@ Projectile = Class(ProjectileMethods, Entity) {
     end,
 
     -- this should never be called - use the actual function.
-    GetCachePosition = function(self)
+        GetCachePosition = function(self)
+
+        -- PROFILER START
+        if not tracker.Functions["GetCachePosition"] then 
+            tracker.Functions["GetCachePosition"]  = 0 
+        end
+        tracker.Functions["GetCachePosition"] = tracker.Functions["GetCachePosition"] + 1
+        -- PROFILER END
+
         return self:GetPosition()
     end,
 
     -- this should never be called - use the actual value.
-    GetCollideFriendly = function(self)
+        GetCollideFriendly = function(self)
+
+        -- PROFILER START
+        if not tracker.Functions["GetCollideFriendly"] then 
+            tracker.Functions["GetCollideFriendly"]  = 0 
+        end
+        tracker.Functions["GetCollideFriendly"] = tracker.Functions["GetCollideFriendly"] + 1
+        -- PROFILER END
+
         return self.CollideFriendly
     end,
 
     -- this should never be called - use the actual value.
-    PassData = function(self, data)
+        PassData = function(self, data)
+
+        -- PROFILER START
+        if not tracker.Functions["PassData"] then 
+            tracker.Functions["PassData"]  = 0 
+        end
+        tracker.Functions["PassData"] = tracker.Functions["PassData"] + 1
+        -- PROFILER END
+
         self.Data = data
     end,
 
     -- when the projectile exits the water
-    OnExitWater = function(self)
+        OnExitWater = function(self)
+
+        -- PROFILER START
+        if not tracker.Functions["OnExitWater"] then 
+            tracker.Functions["OnExitWater"]  = 0 
+        end
+        tracker.Functions["OnExitWater"] = tracker.Functions["OnExitWater"] + 1
+        -- PROFILER END
+
         -- no projectile blueprint has this value set
         -- local bp = self.Blueprint.Audio.ExitWater
         -- if bp then
@@ -529,14 +779,30 @@ Projectile = Class(ProjectileMethods, Entity) {
     end,
 
     -- when the projectile enters the water (think about torpedo bombers)
-    OnEnterWater = function(self)
+        OnEnterWater = function(self)
+
+        -- PROFILER START
+        if not tracker.Functions["OnEnterWater"] then 
+            tracker.Functions["OnEnterWater"]  = 0 
+        end
+        tracker.Functions["OnEnterWater"] = tracker.Functions["OnEnterWater"] + 1
+        -- PROFILER END
+
         local snd = self.BlueprintAudio.EnterWater
         if snd then
             self:PlaySound(snd)
         end
     end,
 
-    AddFlare = function(self, tbl)
+        AddFlare = function(self, tbl)
+
+        -- PROFILER START
+        if not tracker.Functions["AddFlare"] then 
+            tracker.Functions["AddFlare"]  = 0 
+        end
+        tracker.Functions["AddFlare"] = tracker.Functions["AddFlare"] + 1
+        -- PROFILER END
+
         if not tbl then return end
         if not tbl.Radius then return end
         self.MyFlare = Flare {
@@ -564,7 +830,15 @@ Projectile = Class(ProjectileMethods, Entity) {
         TrashBagAdd(self.Trash, self.MyFlare)
     end,
 
-    OnLostTarget = function(self)
+        OnLostTarget = function(self)
+
+        -- PROFILER START
+        if not tracker.Functions["OnLostTarget"] then 
+            tracker.Functions["OnLostTarget"]  = 0 
+        end
+        tracker.Functions["OnLostTarget"] = tracker.Functions["OnLostTarget"] + 1
+        -- PROFILER END
+
         local physics = self.Blueprint.Physics
         if physics.TrackTarget then
             ProjectileSetLifetime(self, physics.OnLostTargetLifetime)

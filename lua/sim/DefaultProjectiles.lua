@@ -54,11 +54,13 @@ local TrashAdd = TrashBag.Add
 -----------------------------------------------------------------
 -- Null Shell
 -----------------------------------------------------------------
+
 NullShell = Class(Projectile) {}
 
 -----------------------------------------------------------------
 -- PROJECTILE WITH ATTACHED EFFECT EMITTERS
 -----------------------------------------------------------------
+
 EmitterProjectile = Class(Projectile) {
     FxTrails = {'/effects/emitters/missile_munition_trail_01_emit.bp',},
     FxTrailScale = 1,

@@ -1564,7 +1564,7 @@ WalkingLandUnit = Class(MobileUnit) {
     DisabledBones = {},
 
     OnMotionHorzEventChange = function(self, new, old)
-        MobileUnit.OnMotionHorzEventChange(self, new, old)
+        Unit.OnMotionHorzEventChange(self, new, old)
 
         if old == 'Stopped' then
             if not self.Animator then

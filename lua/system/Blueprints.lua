@@ -768,3 +768,7 @@ function LoadCustomPreferences()
     if not PrefFile[1] then WARN('Blueprints.lua - Preferences file not found. Skipping custom content. Is the file mounted correctly in the init?') return end
     safecall(task .. ': ' .. PrefFile[1], doscript, PrefFile[1])
 end
+
+do 
+
+end
