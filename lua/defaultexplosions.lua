@@ -447,6 +447,4 @@ end
 
 --- Optimal implementations ---
 
--- this is a change
-
 local DefaultExplosionsOpti = import("/lua/DefaultExplosionsOpti.lua")
