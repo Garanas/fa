@@ -11,6 +11,7 @@
 --------------------------------------------------------------------------
 --  TERRAN PROJECTILES SCRIPTS
 --------------------------------------------------------------------------
+local Entity = import('/lua/sim/Entity.lua').Entity
 local Projectile = import('/lua/sim/projectile.lua').Projectile
 local DefaultProjectileFile = import('/lua/sim/defaultprojectiles.lua')
 local EmitterProjectile = DefaultProjectileFile.EmitterProjectile
@@ -25,6 +26,46 @@ local DepthCharge = import('/lua/defaultantiprojectile.lua').DepthCharge
 local util = import('utilities.lua')
 local NukeProjectile = DefaultProjectileFile.NukeProjectile
 local RandomFloat = import('/lua/utilities.lua').GetRandomFloat
+
+--- A dummy projectile used when using the UEF slice build animation. The
+-- aim is to reduce the number of allocations to a minimum.
+TDummyBuildProjectile = Class(moho.projectile_methods, Entity) {
+    -- PassDamageData = function(self, DamageData) end,
+    -- DoDamage = function(self, instigator, DamageData, targetEntity) end, 
+
+    -- OnCollisionCheck = function(self, other) end,
+    -- OnDamage = function(self, instigator, amount, vector, damageType) end,
+    -- OnDestroy = function(self) end,
+    -- DoTakeDamage = function(self, instigator, amount, vector, damageType) end,
+    -- OnKilled = function(self, instigator, type, overkillRatio) end,
+    -- DoMetaImpact = function(self, damageData) end,
+    -- CreateImpactEffects = function(self, army, EffectTable, EffectScale) end,
+    -- CreateTerrainEffects = function(self, army, EffectTable, EffectScale) end,
+    -- GetTerrainEffects = function(self, TargetType, ImpactEffectType) end,
+    -- OnCollisionCheckWeapon = function(self, firingWeapon) end,
+    -- OnImpact = function(self, targetType, targetEntity) end,
+    -- OnImpactDestroy = function(self, targetType, targetEntity) end,
+    -- DoUnitImpactBuffs = function(self, target) end,
+    -- OnExitWater = function(self) end,
+    -- OnEnterWater = function(self) end,
+    -- OnLostTarget = function(self) end,
+
+    __init = function(self, spec) 
+
+    end,
+
+    __post_init = function(self, spec) 
+
+    end,
+
+    OnCreate = function(self, inWater) 
+        LOG("Called: OnCreate!")
+        for i in self.FxTrails do
+            local emitter = CreateEmitterOnEntity(self, self.Army, self.FxTrails[i])
+        end
+    end,
+
+}
 
 TFragmentationGrenade= Class(EmitterProjectile) {
     FxImpactUnit = EffectTemplate.THeavyFragmentationGrenadeUnitHit,
