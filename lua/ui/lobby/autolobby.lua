@@ -398,7 +398,24 @@ function HostGame(gameName, scenarioFileName, singlePlayer)
         LOG("requiredPlayers was set to: "..requiredPlayers)
     end
 
-    SetGameOptionsFromCommandLine()
+    local next = 1
+    local args, nextArgs = nil, nil
+    repeat
+        nextArgs, args = GetCommandLineArg("/gameoptions", next), nextArgs
+        next = next + 1
+    until not nextArgs
+
+    if args then
+        for _, arg in args do
+            local option = utils.StringSplit(arg, ":")
+            local name, value = option[1], option[2]
+            if name and value then
+                gameInfo.GameOptions[name] = value
+            else
+                LOG("Malformed gameoption. ignoring...")
+            end
+        end
+    end
 
     -- The guys at GPG were unable to make a standard for map. We dirty-solve it.
     lobbyComm.desiredScenario = string.gsub(scenarioFileName, ".v%d%d%d%d_scenario.lua", "_scenario.lua")
