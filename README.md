@@ -26,8 +26,25 @@ Lua benchmarks [here](https://gitlab.com/supreme-commander-forged-alliance/other
 
 Replaces Bugsplat [here](https://github.com/FAForever/FADeepProbe)
 
-Running the game with your changes
-----------------------------------
+### Development environment
+
+
+#### Integrated Development Environment (IDE)
+
+We recommend you to work with [Visual Studio Code](https://code.visualstudio.com/) as it is a modern editor. Feel free to use your own.
+
+A list of useful extentions:
+ - [Git Graph](): You can view the graphs of various pull requests.
+ - [GitLens - Git Supercharged](): You can see the last commit on a given line to find out when it was changed last and why.
+ - [Shader languages support for VS Code](https://marketplace.visualstudio.com/items?itemName=slevesque.shader): Makes it easier to work on the shaders that are in the repository.
+
+And optionally:
+ - [Peacock](): Allows you to color-code your workspaces.
+
+There's also [Lua](https://marketplace.visualstudio.com/items?itemName=sumneko.lua) that adds intellisense-like features. The Lua used in Supreme Commander is not compatible with this extension. As an example: we allow `continue` statements and we allow `#` as a comment (instead of `--`).
+
+Other useful applications:
+ - [ScreenToGif](https://www.screentogif.com/): Makes it easier to show issues / fixes that
 
 The easiest way to running the game with your changes is to create a DevData directory nested in FAForever and put all the modified files there.
 
