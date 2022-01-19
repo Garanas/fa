@@ -187,10 +187,16 @@ local function CreateDialog(clients)
     end
 end
 
+
+
 function Update()
+    LOG("Update!")
+    LOG(GetSystemTime())
     local needDialog = false
     local clients = GetSessionClients()
     local stillin = {}
+
+
 
     for index, client in clients do
         if client.connected then
