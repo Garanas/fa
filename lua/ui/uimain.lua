@@ -129,7 +129,6 @@ end
 -- network disconnection/boot dialog
 local prevDisconnectModule
 function UpdateDisconnectDialog()
-    LOG("Hi")
     local module = import('/lua/ui/dialogs/disconnect.lua')
     if prevDisconnectModule and prevDisconnectModule != module then
         pcall(prevDisconnectModule.DestroyDialog)
