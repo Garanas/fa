@@ -4,8 +4,8 @@ PropBlueprint{
         "RECLAIMABLE",
     },
     Defense = {
-        Health = 400,
-        MaxHealth = 400,
+        Health = 402,
+        MaxHealth = 402,
     },
     Display = {
         Mesh = {
