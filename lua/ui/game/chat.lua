@@ -1155,7 +1155,7 @@ function CreateChat()
         if GUI.config then GUI.config:Destroy() GUI.config = false end
         
         -- CreateConfigWindow()
-        GUI.config = import("/lua/ui/game/ChatConfigurationDialog.lua").GetChatDialog(GetFrame(0))
+        GUI.config = import("/lua/ui/game/ChatConfigurationDialog.lua").GetChatConfigurationDialog(GetFrame(0))
 
 
         GUI.bg:SetNeedsFrameUpdate(false)

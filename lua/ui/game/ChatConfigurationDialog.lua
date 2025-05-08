@@ -127,7 +127,7 @@ ChatConfigurationDialog = Class(Window) {
 
 ---@param parent Control
 ---@return UIChatConfigurationDialog
-GetChatDialog = function(parent)
+GetChatConfigurationDialog = function(parent)
     ChatConfigurationDialogInstance = ChatConfigurationDialogInstance or ChatConfigurationDialog(parent)
     return ChatConfigurationDialogInstance
 end
@@ -148,7 +148,7 @@ function __moduleinfo.OnReload(newModule)
         ChatConfigurationDialogInstance:Destroy()
 
         -- tell new module to create a new instance
-        newModule.GetChatDialog(parent)
+        newModule.GetChatConfigurationDialog(parent)
     end
 end
 
