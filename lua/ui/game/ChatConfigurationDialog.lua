@@ -128,7 +128,10 @@ ChatConfigurationDialog = Class(Window) {
 ---@param parent Control
 ---@return UIChatConfigurationDialog
 GetChatConfigurationDialog = function(parent)
-    ChatConfigurationDialogInstance = ChatConfigurationDialogInstance or ChatConfigurationDialog(parent)
+    if not ChatConfigurationDialogInstance or IsDestroyed(ChatConfigurationDialogInstance) then
+        ChatConfigurationDialogInstance = ChatConfigurationDialog(parent)
+    end
+
     return ChatConfigurationDialogInstance
 end
 
